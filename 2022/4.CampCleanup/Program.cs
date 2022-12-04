@@ -18,13 +18,13 @@ namespace CampCleanup
                                         Common: d.First().Intersect(d.Last()).ToList()
                                     )).ToList();
 
-            var vettiElfsCount = elfsWithIds.Count(s => s.Common.SequenceEqual(s.First) || s.Common.SequenceEqual(s.Second));
+            var idleElvesCount = elfsWithIds.Count(s => s.Common.SequenceEqual(s.First) || s.Common.SequenceEqual(s.Second));
 
-            Console.WriteLine($"First : {vettiElfsCount}");
+            Console.WriteLine($"First : {idleElvesCount}");
 
-            var overlappedElfsCount = elfsWithIds.Count(s => s.Common.Any());
+            var overlappedElvesCount = elfsWithIds.Count(s => s.Common.Any());
 
-            Console.WriteLine($"Second : {overlappedElfsCount}");
+            Console.WriteLine($"Second : {overlappedElvesCount}");
 
             Console.ReadKey();
         }
