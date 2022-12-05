@@ -1,10 +1,4 @@
-﻿
-using System;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-
-var lines = File.ReadAllLines("inputs.txt");
+﻿var lines = File.ReadAllLines("inputs.txt");
 
 List<List<int>> elves = new() { new () };
 
