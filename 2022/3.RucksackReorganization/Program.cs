@@ -7,7 +7,9 @@
             Enumerable.Range(97, 26).Select((s, i) => KeyValuePair.Create((char)s, i + 1)).Concat(
             Enumerable.Range(65, 26).Select((s, i) => KeyValuePair.Create((char)s, i + 27))).ToDictionary(x => x.Key, y => y.Value);
         
-        var rucksacks = lines.Select(x => (First: string.Concat(x.Take(x.Length / 2)), Second: string.Concat(x.Skip(x.Length / 2))))
+        var rucksacks = (from line in lines 
+                let mid = line.Length
+                select (First: line.Take(mid), Second: line.TakeLast(mid)))
             .Select(s => (s.First, s.Second, Common: Enumerable.Intersect(s.First, s.Second).First()))
             .Select(s => (s.First, s.Second, s.Common, Priority: priorities[s.Common])).ToList();
 
