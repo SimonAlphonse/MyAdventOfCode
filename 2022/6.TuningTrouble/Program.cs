@@ -5,8 +5,8 @@
         static void Main()
         {
             var inputs = File.ReadAllText($"inputs.txt");
-            Console.WriteLine($"Part One :{FindMarkerIndex(inputs, 4)}");
-            Console.WriteLine($"Part Two :{FindMarkerIndex(inputs, 14)}");
+            Console.WriteLine($"Part One : {FindMarkerIndex(inputs, 4)}");
+            Console.WriteLine($"Part Two : {FindMarkerIndex(inputs, 14)}");
             Console.Read();
         }
 
@@ -14,8 +14,7 @@
         {
             for (int i = 0; i < inputs.Length - markerLength - 1; i++)
             {
-                string marker = string.Concat(inputs.Skip(i).Take(markerLength));
-                if (marker.Distinct().Count() == markerLength)
+                if (inputs.Skip(i).Take(markerLength).Distinct().Count() == markerLength)
                     return i + markerLength;
             }
 
