@@ -5,20 +5,15 @@
         static void Main()
         {
             var inputs = File.ReadAllText($"inputs.txt");
-            Console.WriteLine($"Part One : {FindMarkerIndex(inputs, 4)}");
-            Console.WriteLine($"Part Two : {FindMarkerIndex(inputs, 14)}");
+            Console.WriteLine($"Part One : {FindMarker(inputs, 4)}");
+            Console.WriteLine($"Part Two : {FindMarker(inputs, 14)}");
             Console.Read();
         }
 
-        private static int FindMarkerIndex(string inputs, int markerLength)
+        private static int FindMarker(string inputs, int length)
         {
-            for (int i = 0; i < inputs.Length - markerLength - 1; i++)
-            {
-                if (inputs.Skip(i).Take(markerLength).Distinct().Count() == markerLength)
-                    return i + markerLength;
-            }
-
-            return 0;
+            return Enumerable.Range(0, inputs.Length - length)
+                .First(i => inputs.Skip(i).Take(length).Distinct().Count() == length) + length;
         }
     }
 }
