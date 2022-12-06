@@ -14,7 +14,7 @@
         {
             var lines = File.ReadAllText($"inputs.txt");
 
-            for (int i = 0; i < lines.Length - 3; i++)
+            for (int i = 0; i < lines.Length - markerLength - 1; i++)
             {
                 string marker = string.Concat(lines.Skip(i).Take(markerLength));
                 if (marker.Distinct().Count() == markerLength)
