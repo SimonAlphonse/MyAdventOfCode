@@ -4,23 +4,19 @@
     {
         static void Main()
         {
-            Console.WriteLine($"Part One :{FindMarkerIndex(4)}"); ;
-            Console.WriteLine($"Part Two :{FindMarkerIndex(14)}"); ;
-
+            var inputs = File.ReadAllText($"inputs.txt");
+            Console.WriteLine($"Part One :{FindMarkerIndex(inputs, 4)}");
+            Console.WriteLine($"Part Two :{FindMarkerIndex(inputs, 14)}");
             Console.Read();
         }
 
-        private static int FindMarkerIndex(int markerLength)
+        private static int FindMarkerIndex(string inputs, int markerLength)
         {
-            var lines = File.ReadAllText($"inputs.txt");
-
-            for (int i = 0; i < lines.Length - markerLength - 1; i++)
+            for (int i = 0; i < inputs.Length - markerLength - 1; i++)
             {
-                string marker = string.Concat(lines.Skip(i).Take(markerLength));
+                string marker = string.Concat(inputs.Skip(i).Take(markerLength));
                 if (marker.Distinct().Count() == markerLength)
-                {
                     return i + markerLength;
-                }
             }
 
             return 0;
