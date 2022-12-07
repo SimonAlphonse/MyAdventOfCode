@@ -16,21 +16,21 @@ namespace SupplyStacks
                 .Select(s => s.Split($"{Environment.NewLine}")).ToList();
 
             var supplies = inputs.First().TakeWhile(x => x.Contains("[")).Reverse()
-                .Select(s => s.Chunk(4).Select(s => string.Concat(s).Trim()).ToList()).ToList();
+                .Select(x => x.Chunk(4).Select(y => string.Concat(y).Trim()).ToList()).ToList();
 
             var instructions = inputs.Last().Select(s =>
                 s.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-                 .Where(w => int.TryParse(w, out int temp))
-                 .Select(int.Parse))
+                 .Where(w => int.TryParse(w, out var temp))
+                 .Select(int.Parse).ToList())
                  .Select(x => new Instruction(Count: x.First(), From: x.Skip(1).First(), To: x.Last())).ToList();
 
-            RearrangeSupplies(inputs, supplies, instructions, true);
-            RearrangeSupplies(inputs, supplies, instructions, false);
+            Console.WriteLine($"Part One : {RearrangeSupplies(supplies, instructions, true)}");
+            Console.WriteLine($"Part Two : {RearrangeSupplies(supplies, instructions, false)}");
 
             Console.Read();
         }
 
-        private static void RearrangeSupplies(List<string[]> inputs, List<List<string>> supplies, List<Instruction> instructions, bool isSinglePickup)
+        private static string RearrangeSupplies(List<List<string>> supplies, List<Instruction> instructions, bool isSinglePickup)
         {
             var stacks = new Dictionary<int, List<string>>();
 
@@ -42,15 +42,13 @@ namespace SupplyStacks
                 var sourceStack = stacks[instruction.From];
                 var suppliesToMove = sourceStack.TakeLast(instruction.Count).ToArray();
 
-                if (isSinglePickup)
-                    stacks[instruction.To].AddRange(suppliesToMove.Reverse());
-                else
-                    stacks[instruction.To].AddRange(suppliesToMove);
-                
+                stacks[instruction.To].AddRange(isSinglePickup ? suppliesToMove.Reverse() : suppliesToMove);
                 stacks[instruction.From].RemoveRange(stacks[instruction.From].Count - instruction.Count, instruction.Count);
             }
 
-            Console.WriteLine($"Part {(isSinglePickup ? "One" : "Two")}: {string.Concat(stacks.Select(s => s.Value.Last())).Replace("[", string.Empty).Replace("]", string.Empty)}");
+            return string.Concat(stacks.Select(s => s.Value.Last()))
+                .Replace("[", string.Empty)
+                .Replace("]", string.Empty);
         }
     }
 }
