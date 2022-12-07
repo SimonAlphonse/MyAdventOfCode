@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 public class Program
 {
     record MyFile(string Name, double Size);
+
     record MyDirectory(string Name, List<MyDirectory> Directories, List<MyFile> Files);
 
     public static void Main()
@@ -21,9 +22,9 @@ public class Program
 
             List<string> section;
 
-            if(line == "$ cd ..")
+            if (line == "$ cd ..")
             {
-                if(currentDirectory.Name != "~")
+                if (currentDirectory.Name != "~")
                     currentDirectory = GetAllDirectories(rootDirectory)
                         .First(w => w.Directories.Any(a => a.Name == currentDirectory.Name));
                 i++;
@@ -37,24 +38,29 @@ public class Program
             else if (line.StartsWith("$ cd"))
             {
                 var directoryName = line.Split(" ").Last();
-                currentDirectory = GetAllDirectories(rootDirectory).First(x => x.Name == $@"{currentDirectory.Name}\{directoryName}");
+                currentDirectory = GetAllDirectories(rootDirectory)
+                    .First(x => x.Name == $@"{currentDirectory.Name}\{directoryName}");
                 section = inputs.Skip(i + 2).TakeWhile(w => !w.StartsWith('$')).ToList();
 
                 i += section.Count + 2;
             }
-            else { throw new InvalidDataException(); }
+            else
+            {
+                throw new InvalidDataException();
+            }
 
             foreach (var file in section.Where(w => !w.Contains("dir"))
-                  .Select(s => new MyFile(s.Split(" ").Last(), double.Parse(s.Split(" ").First()))))
+                         .Select(s => new MyFile(s.Split(" ").Last(),
+                             double.Parse(s.Split(" ").First()))))
             {
-                if (!currentDirectory.Files.Any(x => x.Name == file.Name))
+                if (currentDirectory.Files.All(x => x.Name != file.Name))
                     currentDirectory.Files.Add(file);
             }
 
             foreach (var directory in section.Where(w => w.StartsWith("dir"))
-                .Select(s => new MyDirectory($@"{currentDirectory.Name}\{s.Split(" ").Last()}", new(), new())))
+                         .Select(s => new MyDirectory($@"{currentDirectory.Name}\{s.Split(" ").Last()}", new(), new())))
             {
-                if (!directory.Directories.Any(a => a.Name == directory.Name))
+                if (directory.Directories.All(a => a.Name != directory.Name))
                     currentDirectory.Directories.Add(directory);
             }
         }
@@ -63,10 +69,7 @@ public class Program
 
         foreach (var directory in GetAllDirectories(rootDirectory))
         {
-            var allFiles = new List<MyFile>();
-            allFiles.AddRange(directory.Files);
-            allFiles.AddRange(directory.Directories.SelectMany(s => s.Files));
-
+            var allFiles = GetAllFiles(directory);
             var totalSize = allFiles.Sum(s => s.Size);
             if (totalSize <= 100000)
                 sumOfSmallDirectories += totalSize;
@@ -74,6 +77,8 @@ public class Program
 
         Console.WriteLine($"Part One : {sumOfSmallDirectories}");
 
+        
+        
         Console.Read();
     }
 
@@ -81,14 +86,19 @@ public class Program
     {
         var subDirectories = new List<MyDirectory>() { directory };
 
-        if (directory.Directories.Any())
-        {
-            foreach (var currentDirectory in directory.Directories)
-            {
-                subDirectories.AddRange(GetAllDirectories(currentDirectory));
-            }
-        }
+        foreach (var currentDirectory in directory.Directories)
+            subDirectories.AddRange(GetAllDirectories(currentDirectory));
 
         return subDirectories.GroupBy(g => g.Name).Select(s => s.First()).ToList();
+    }
+    
+    private static List<MyFile> GetAllFiles(MyDirectory directory)
+    {
+        var files = new List<MyFile>(directory.Files);
+
+        foreach (var currentDirectory in directory.Directories)
+            files.AddRange(GetAllFiles(currentDirectory));
+
+        return files.GroupBy(g => (g.Name, g.Size)).Select(s => s.First()).ToList();
     }
 }
