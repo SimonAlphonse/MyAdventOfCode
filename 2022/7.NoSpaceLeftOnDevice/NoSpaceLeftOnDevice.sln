@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSpaceLeftOnDevice", "NoSpaceLeftOnDevice\NoSpaceLeftOnDevice.csproj", "{CED7E5EE-5FE9-40F2-B989-C7BFBEDC4232}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoSpaceLeftOnDevice", "NoSpaceLeftOnDevice.csproj", "{CED7E5EE-5FE9-40F2-B989-C7BFBEDC4232}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
