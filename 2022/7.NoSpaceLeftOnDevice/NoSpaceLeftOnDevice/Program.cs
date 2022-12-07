@@ -35,7 +35,7 @@ public class Program
                 section = inputs.Skip(i + 1).TakeWhile(w => !w.StartsWith('$')).ToList();
                 i += section.Count + 1;
             }
-            else if (line.StartsWith("$ cd"))
+            else
             {
                 var directoryName = line.Split(" ").Last();
                 currentDirectory = GetAllDirectories(rootDirectory)
@@ -43,10 +43,6 @@ public class Program
                 section = inputs.Skip(i + 2).TakeWhile(w => !w.StartsWith('$')).ToList();
 
                 i += section.Count + 2;
-            }
-            else
-            {
-                throw new InvalidDataException();
             }
 
             foreach (var file in section.Where(w => !w.Contains("dir"))
@@ -65,20 +61,21 @@ public class Program
             }
         }
 
-        double sumOfSmallDirectories = 0;
+        var directoryAndSpace = new Dictionary<MyDirectory, double>();
 
         foreach (var directory in GetAllDirectories(rootDirectory))
         {
             var allFiles = GetAllFiles(directory);
-            var totalSize = allFiles.Sum(s => s.Size);
-            if (totalSize <= 100000)
-                sumOfSmallDirectories += totalSize;
+            directoryAndSpace.Add(directory, allFiles.Sum(s => s.Size));
         }
 
-        Console.WriteLine($"Part One : {sumOfSmallDirectories}");
+        Console.WriteLine($"Part One : {directoryAndSpace.Where(w => w.Value <= 100000).Sum(s => s.Value)}");
 
-        
-        
+        var usedSpace = GetAllFiles(rootDirectory).Sum(s => s.Size);
+
+        Console.WriteLine($"Part Two : {directoryAndSpace.OrderBy(o => o.Value).ToList()
+            .First(directory => 70000000 - usedSpace + directory.Value >= 30000000).Value}");
+
         Console.Read();
     }
 
