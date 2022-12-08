@@ -32,8 +32,8 @@
                 for (var column = 1; column < trees.First().Length - 1; column++)
                 {
                     treeHeights.Add(new(trees[row][column],
-                        trees.Select(r => r[column]).Take(row).ToArray(),
-                        trees[row].Take(column).ToArray(),
+                        trees.Select(r => r[column]).Take(row).Reverse().ToArray(),
+                        trees[row].Take(column).Reverse().ToArray(),
                         trees.Select(r => r[column]).Skip(row + 1).ToArray(),
                         trees[row].Skip(column + 1).ToArray()));
                 }
@@ -45,27 +45,22 @@
         private static double GetMaxScenicScore(List<int[]> trees)
         {
             return GetTreeHeightsByDirection(trees).Select(s =>
-                GetScenicScore(s.Height, s.North.Reverse().ToArray()) *
-                GetScenicScore(s.Height, s.West.Reverse().ToArray()) *
+                GetScenicScore(s.Height, s.North) *
+                GetScenicScore(s.Height, s.West) *
                 GetScenicScore(s.Height, s.South) *
                 GetScenicScore(s.Height, s.East)).Max();
         }
 
-        private static int GetScenicScore(int height, int[] trees)
+        private static int GetScenicScore(int height, int[] heights)
         {
-            List<int> visible = new() { trees.First() };
+            List<int> visible = new();
 
-            for (var i = 1; i < trees.Length; i++)
+            foreach (var current in heights)
             {
-                var previous = visible.Last();
-                if (previous >= height) break;
-                
-                var current = trees.Skip(i).First();
                 visible.Add(current);
-                
                 if (current >= height) break;
             }
-
+            
             return visible.Count();
         }
     }
