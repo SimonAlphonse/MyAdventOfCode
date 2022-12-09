@@ -33,13 +33,12 @@ internal abstract class Program
         {
             for (var i = 1; i <= instruction.Distance; i++)
             {
-                for (var index = 0; index < length - 1; index++)
-                {
-                    var head = trails[index];
-                    var tail = trails[index + 1];
+                trails[0].Add(MoveHead(trails[0].Last(), instruction));
 
-                    if (index == 0)
-                        head.Add(MoveHead(head.Last(), instruction));
+                for (var index = 1; index < length; index++)
+                {
+                    var head = trails[index - 1];
+                    var tail = trails[index];
 
                     tail.Add(MoveTail(head.Last(), tail.Last()));
                 }
