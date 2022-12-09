@@ -8,7 +8,7 @@ internal abstract class Program
 
     public static void Main()
     {
-        Console.WriteLine($"Part One Demo: {GetUniqueTrailCount(GetInstructions("demo-inputs-1.txt"), 2)}");
+        Console.WriteLine($"Part One Demo : {GetUniqueTrailCount(GetInstructions("demo-inputs-1.txt"), 2)}");
         Console.WriteLine($"Part One : {GetUniqueTrailCount(GetInstructions("inputs.txt"), 2)}");
         Console.WriteLine($"Part Two Demo : {GetUniqueTrailCount(GetInstructions("demo-inputs-2.txt"), 10)}");
         Console.WriteLine($"Part Two : {GetUniqueTrailCount(GetInstructions("inputs.txt"), 10)}");
@@ -64,17 +64,13 @@ internal abstract class Program
     {
         int xDiff = head.X - tail.X, yDiff = head.Y - tail.Y;
 
-        var x = Math.Abs(xDiff) > 1
+        var x = Math.Abs(xDiff) > 1 || Math.Abs(yDiff) > 1
             ? tail.X + Math.Sign(xDiff)
-            : Math.Abs(yDiff) > 1
-                ? tail.X + xDiff
-                : tail.X;
+            : tail.X;
 
-        var y = Math.Abs(yDiff) > 1
+        var y = Math.Abs(xDiff) > 1 || Math.Abs(yDiff) > 1
             ? tail.Y + Math.Sign(yDiff)
-            : Math.Abs(xDiff) > 1
-                ? tail.Y + yDiff
-                : tail.Y;
+            : tail.Y;
 
         return new(x, y);
     }
