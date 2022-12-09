@@ -64,14 +64,8 @@ internal abstract class Program
     {
         int xDiff = head.X - tail.X, yDiff = head.Y - tail.Y;
 
-        var x = Math.Abs(xDiff) > 1 || Math.Abs(yDiff) > 1
-            ? tail.X + Math.Sign(xDiff)
-            : tail.X;
-
-        var y = Math.Abs(xDiff) > 1 || Math.Abs(yDiff) > 1
-            ? tail.Y + Math.Sign(yDiff)
-            : tail.Y;
-
-        return new(x, y);
+        return Math.Abs(xDiff) > 1 || Math.Abs(yDiff) > 1
+            ? new Point(tail.X + Math.Sign(xDiff), tail.Y + Math.Sign(yDiff))
+            : tail;
     }
 }
