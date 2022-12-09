@@ -64,17 +64,17 @@ internal abstract class Program
     {
         int xDiff = head.X - tail.X, yDiff = head.Y - tail.Y;
 
-        var x = xDiff switch
-        {
-            > 1 or < -1 => tail.X + Math.Sign(xDiff),
-            _ => Math.Abs(yDiff) > 1 ? tail.X + xDiff : tail.X,
-        };
+        var x = Math.Abs(xDiff) > 1
+            ? tail.X + Math.Sign(xDiff)
+            : Math.Abs(yDiff) > 1
+                ? tail.X + xDiff
+                : tail.X;
 
-        var y = yDiff switch
-        {
-            > 1 or < -1 => tail.Y + Math.Sign(yDiff),
-            _ => Math.Abs(xDiff) > 1 ? tail.Y + yDiff : tail.Y,
-        };
+        var y = Math.Abs(yDiff) > 1
+            ? tail.Y + Math.Sign(yDiff)
+            : Math.Abs(xDiff) > 1
+                ? tail.Y + yDiff
+                : tail.Y;
 
         return new(x, y);
     }
