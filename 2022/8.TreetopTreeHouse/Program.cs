@@ -51,17 +51,10 @@
                 GetScenicScore(s.Height, s.East)).Max();
         }
 
-        private static int GetScenicScore(int height, int[] heights)
+        private static int GetScenicScore(int tree, int[] heights)
         {
-            List<int> visible = new();
-
-            foreach (var current in heights)
-            {
-                visible.Add(current);
-                if (current >= height) break;
-            }
-            
-            return visible.Count();
+            return heights.TakeWhile((_, index) 
+                => index == 0 || heights.Take(index).Max() < tree).Count();
         }
     }
 }
