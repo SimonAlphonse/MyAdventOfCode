@@ -1,7 +1,8 @@
-﻿
-using System.Drawing;
+﻿using System.Drawing;
 
-internal class Program
+namespace RopeBridge;
+
+internal abstract class Program
 {
     record Instruction(string Direction, int Distance);
 
@@ -12,7 +13,7 @@ internal class Program
         Console.WriteLine($"Part Two Demo : {GetUniqueTrailCount(GetInstructions("demo-inputs-2.txt"), 10)}");
         Console.WriteLine($"Part Two : {GetUniqueTrailCount(GetInstructions("inputs.txt"), 10)}");
 
-        Console.Read();
+        Console.ReadKey();
     }
 
     private static List<Instruction> GetInstructions(string filename)
@@ -24,8 +25,9 @@ internal class Program
 
     private static int GetUniqueTrailCount(List<Instruction> inputs, int length)
     {
-        List<List<Point>> trails = Enumerable.Range(0, length)
-            .Select(key => new List<Point>() { new(0, 0) }).ToList();
+
+        List<Point>[] trails = Enumerable.Range(0, length)
+            .Select(_ => new List<Point>() { new(0, 0) }).ToArray();
 
         foreach (var instruction in inputs)
         {
@@ -35,15 +37,11 @@ internal class Program
                 {
                     var head = trails[index];
                     var tail = trails[index + 1];
-                    var headTrail = head.Last();
 
                     if (index == 0)
-                    {
-                        headTrail = MoveHead(head.Last(), instruction);
-                        head.Add(headTrail);
-                    }
+                        head.Add(MoveHead(head.Last(), instruction));
 
-                    tail.Add(MoveTail(headTrail, tail.Last()));
+                    tail.Add(MoveTail(head.Last(), tail.Last()));
                 }
             }
         }
@@ -55,39 +53,35 @@ internal class Program
     {
         return instruction.Direction switch
         {
-            "L" => head with { X = head.X - 1 },
             "R" => head with { X = head.X + 1 },
             "U" => head with { Y = head.Y + 1 },
+            "L" => head with { X = head.X - 1 },
             _ => head with { Y = head.Y - 1 }
         };
     }
 
     private static Point MoveTail(Point head, Point tail)
     {
-        int tailX = tail.X, tailY = tail.Y;
+        int xDiff = head.X - tail.X, yDiff = head.Y - tail.Y;
 
-        if (head.X - tailX > 1)
+        var x = xDiff switch
         {
-            tailX++;
-            tailY = head.Y;
-        }
-        else if (tailX - head.X > 1)
-        {
-            tailX--;
-            tailY = head.Y;
-        }
+            > 1 => tail.X + 1,
+            < -1 => tail.X - 1,
+            1 => Math.Abs(yDiff) > 1 ? tail.X + 1 : tail.X,
+            -1 => Math.Abs(yDiff) > 1 ? tail.X - 1 : tail.X,
+            0 => tail.X,
+        };
 
-        if (head.Y - tailY > 1)
+        var y = yDiff switch
         {
-            tailY++;
-            tailX = head.X;
-        }
-        else if (tailY - head.Y > 1)
-        {
-            tailY--;
-            tailX = head.X;
-        }
+            > 1 => tail.Y + 1,
+            < -1 => tail.Y - 1,
+            1 => Math.Abs(xDiff) > 1 ? tail.Y + 1 : tail.Y,
+            -1 => Math.Abs(xDiff) > 1 ? tail.Y - 1 : tail.Y,
+            0 => tail.Y,
+        };
 
-        return new(tailX, tailY);
+        return new(x, y);
     }
 }
