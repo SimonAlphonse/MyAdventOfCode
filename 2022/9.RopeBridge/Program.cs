@@ -68,18 +68,14 @@ internal abstract class Program
         {
             > 1 => tail.X + 1,
             < -1 => tail.X - 1,
-            1 => Math.Abs(yDiff) > 1 ? tail.X + 1 : tail.X,
-            -1 => Math.Abs(yDiff) > 1 ? tail.X - 1 : tail.X,
-            0 => tail.X,
+            _ => Math.Abs(yDiff) > 1 ? tail.X + xDiff : tail.X,
         };
 
         var y = yDiff switch
         {
             > 1 => tail.Y + 1,
             < -1 => tail.Y - 1,
-            1 => Math.Abs(xDiff) > 1 ? tail.Y + 1 : tail.Y,
-            -1 => Math.Abs(xDiff) > 1 ? tail.Y - 1 : tail.Y,
-            0 => tail.Y,
+            _ => Math.Abs(xDiff) > 1 ? tail.Y + yDiff : tail.Y,
         };
 
         return new(x, y);
