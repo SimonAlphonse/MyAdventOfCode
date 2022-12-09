@@ -54,7 +54,8 @@
         private static int GetScenicScore(int tree, int[] heights)
         {
             return heights.TakeWhile((_, index) 
-                => index == 0 || heights.Take(index).Max() < tree).Count();
+                => index == 0 /* Always nearest tree is visible */
+                   || heights.Take(index).Max() < tree).Count(); /* View is not blocked so far */
         }
     }
 }
