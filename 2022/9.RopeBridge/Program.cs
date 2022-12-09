@@ -66,15 +66,13 @@ internal abstract class Program
 
         var x = xDiff switch
         {
-            > 1 => tail.X + 1,
-            < -1 => tail.X - 1,
+            > 1 or < -1 => tail.X + Math.Sign(xDiff),
             _ => Math.Abs(yDiff) > 1 ? tail.X + xDiff : tail.X,
         };
 
         var y = yDiff switch
         {
-            > 1 => tail.Y + 1,
-            < -1 => tail.Y - 1,
+            > 1 or < -1 => tail.Y + Math.Sign(yDiff),
             _ => Math.Abs(xDiff) > 1 ? tail.Y + yDiff : tail.Y,
         };
 
