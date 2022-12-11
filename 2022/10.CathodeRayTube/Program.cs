@@ -15,13 +15,9 @@ namespace CathodeRayTube
                     .Replace("addx ", "addx 2 ")).Select(s => s.Split(" "))
                 .Select(s => new Instruction(s[0], int.Parse(s[1]), int.Parse(s[2]))).ToList();
 
-            List<State> registers = ExecuteInstructions(instructions);
+            var registers = ExecuteInstructions(instructions);
             
-            var bookmarks = Enumerable.Range(-20, 6).Select(s => s + 40).ToArray();
-            var result = registers.Where((_, index) => bookmarks.Contains(index + 1))
-                .Select((value, index) => value.From * bookmarks[index]).Sum();
-
-            Console.WriteLine($"Part One : {result}");
+            Console.WriteLine($"Part One : {GetSignalStrength(registers)}");
 
             char[] crt = new string(' ', 40 * 6).ToCharArray();
 
@@ -32,6 +28,13 @@ namespace CathodeRayTube
                 crt[cycle.No - 1] = cycle.Spire.Contains(Math.Max(cycle.No % 40 - 1, 0)) ? '#' : '.';
 
             PrettyPrint(crt);
+        }
+
+        private static int GetSignalStrength(List<State> registers)
+        {
+            var bookmarks = Enumerable.Range(-20, 6).Select(s => s + 40).ToArray();
+            return registers.Where((_, index) => bookmarks.Contains(index + 1))
+                .Select((value, index) => value.From * bookmarks[index]).Sum();
         }
 
         private static List<State> ExecuteInstructions(List<Instruction> instructions)
