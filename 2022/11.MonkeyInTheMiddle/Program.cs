@@ -3,7 +3,7 @@
 public abstract class Program
 {
     record Choice(int IfTrue, int IfFalse);
-    record MonkeyBusiness(int No, Queue<ulong> Items, string[] Operation, ulong Divisor, Choice Choice)
+    record MonkeyBusiness(int No, Queue<ulong> Items, string[] Operation, ulong Divisor, Choice ThrowTo)
     {
         public ulong Inspection { get; set; }
     }
@@ -37,8 +37,8 @@ public abstract class Program
                 while (monkey.Items.TryDequeue(out var item))
                 {
                     monkey.Inspection++;
-                    var worry = relax(WatchAboutInspection(monkey.Operation.First(), monkey.Operation.Last(), item));
-                    var toMonkey = worry % monkey.Divisor == 0 ? monkey.Choice.IfTrue : monkey.Choice.IfFalse;
+                    var worry = relax(WatchAboutInspection(monkey, item));
+                    var toMonkey = worry % monkey.Divisor == 0 ? monkey.ThrowTo.IfTrue : monkey.ThrowTo.IfFalse;
                     monkeys.First(f => f.No == toMonkey).Items.Enqueue(worry);
                 }
             }
@@ -47,13 +47,13 @@ public abstract class Program
         return monkeys;
     }
 
-    private static ulong WatchAboutInspection(string operation, string value, ulong item)
+    private static ulong WatchAboutInspection(MonkeyBusiness monkey, ulong item)
     {
-        return (operation, value) switch
+        return (monkey.Operation.First(), monkey.Operation.Last()) switch
         {
             ("*", "old") => item * item,
-            ("*", _) => item * ulong.Parse(value),
-            _ => item + ulong.Parse(value),
+            ("*", _) => item * ulong.Parse(monkey.Operation.Last()),
+            _ => item + ulong.Parse(monkey.Operation.Last()),
         };
     }
 
