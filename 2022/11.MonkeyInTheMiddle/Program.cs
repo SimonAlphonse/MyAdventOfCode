@@ -2,7 +2,7 @@
 
 public abstract class Program
 {
-    record MonkeyBusiness(int No, List<ulong> Items, string[] Operation, ulong Divisor, (int IfTrue, int IfFalse) ThrowTo)
+    record MonkeyBusiness(int No, Queue<ulong> Items, string[] Operation, ulong Divisor, (int IfTrue, int IfFalse) ThrowTo)
     {
         public ulong Inspection { get; set; }
     }
@@ -22,7 +22,8 @@ public abstract class Program
         var monkeys = GetMonkeys(fileName);
         var relax = new Func<ulong, ulong>(worry => divide ? worry / 3 
             : worry % monkeys.Select(s => s.Divisor).Aggregate((x, y) => x * y));
-        return WatchMonkeyBusiness(rounds, monkeys, relax).Select(s => s.Inspection)
+        return WatchMonkeyBusiness(rounds, monkeys, relax)
+            .Select(s => s.Inspection)
             .OrderByDescending(o => o)
             .Take(2).Aggregate((a, b) => a * b);
     }
@@ -33,25 +34,16 @@ public abstract class Program
         {
             foreach (var monkey in monkeys)
             {
-                var itemsCount = monkey.Items.Count;
-
-                for (var i = 0; i < itemsCount; i++)
+                while (monkey.Items.TryDequeue(out var item))
                 {
                     monkey.Inspection++;
-
-                    var item = monkey.Items.First();
-                    var worry = WatchAboutInspection(monkey, item);
-                    worry = relax(worry);
-
+                    var worry = relax(WatchAboutInspection(monkey, item));
                     var toMonkey = worry % monkey.Divisor == 0 ? monkey.ThrowTo.IfTrue : monkey.ThrowTo.IfFalse;
-                    monkeys.First(f => f.No == toMonkey).Items.Add(worry);
-                    monkey.Items.Remove(item);
-
-                    // Console.WriteLine($"{round} | {monkey.No}.{i} -> {toMonkey} | {item} -> {worry}");
+                    monkeys.First(f => f.No == toMonkey).Items.Enqueue(worry);
                 }
             }
         }
-        
+
         return monkeys;
     }
 
@@ -71,8 +63,8 @@ public abstract class Program
             .Split($"{Environment.NewLine}{Environment.NewLine}")
             .Select(s => s.Split(Environment.NewLine).ToArray()).Select(input =>
             new MonkeyBusiness(int.Parse(input[0].Replace("Monkey ", string.Empty).First().ToString()),
-                input[1].Replace("Starting items: ", string.Empty)
-                    .Split(",", StringSplitOptions.TrimEntries).Select(ulong.Parse).ToList(),
+                new(input[1].Replace("Starting items: ", string.Empty)
+                    .Split(",", StringSplitOptions.TrimEntries).Select(ulong.Parse)),
                 input[2].Replace("Operation: new = old ", string.Empty).Trim().Split(" "),
                 ulong.Parse(input[3].Replace("Test: divisible by ", string.Empty).Trim()),
                 (int.Parse(input[4].Replace("If true: throw to monkey ", string.Empty).Trim()),
