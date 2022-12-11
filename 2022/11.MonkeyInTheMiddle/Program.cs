@@ -3,7 +3,7 @@
 public abstract class Program
 {
     record Choice(int IfTrue, int IfFalse);
-    record MonkeyBusiness(int No, Queue<ulong> Items, string[] Operation, ulong Divisor, Choice ThrowTo)
+    record MonkeyBusiness(int No, Queue<ulong> Items, string[] Operation, ulong Divisor, Choice Choice)
     {
         public ulong Inspection { get; set; }
     }
@@ -38,7 +38,7 @@ public abstract class Program
                 {
                     monkey.Inspection++;
                     var worry = relax(WatchAboutInspection(monkey, item));
-                    var toMonkey = worry % monkey.Divisor == 0 ? monkey.ThrowTo.IfTrue : monkey.ThrowTo.IfFalse;
+                    var toMonkey = worry % monkey.Divisor == 0 ? monkey.Choice.IfTrue : monkey.Choice.IfFalse;
                     monkeys.First(f => f.No == toMonkey).Items.Enqueue(worry);
                 }
             }
