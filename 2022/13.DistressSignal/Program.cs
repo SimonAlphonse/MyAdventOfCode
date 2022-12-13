@@ -9,7 +9,7 @@ abstract class Program
 
     public static void Main()
     {
-        var inputs = File.ReadAllText("inputs-demo.txt")
+        var inputs = File.ReadAllText("inputs.txt")
             .Split($"{Environment.NewLine}{Environment.NewLine}")
             .Select(s => new Signal(s.Split(Environment.NewLine).First(),
                 s.Split(Environment.NewLine).Last())).ToArray();
@@ -19,9 +19,8 @@ abstract class Program
         for (int i = 0; i < inputs.Length; i++)
         {
             var isOrdered = CheckOrder(JArray.Parse(inputs[i].Left), JArray.Parse(inputs[i].Right));
-            Console.WriteLine($"[{i+1}] [{isOrdered}]{Environment.NewLine}{Environment.NewLine}== LEFT : {
-                JsonSerializer.Serialize(inputs[i].Left)} =={Environment.NewLine}== RIGHT : {
-                    JsonSerializer.Serialize(inputs[i].Right)} =={Environment.NewLine}");
+            Console.WriteLine($"[{i+1}] [{isOrdered}]{Environment.NewLine}{Environment.NewLine
+            }== LEFT : {inputs[i].Left} =={Environment.NewLine}== RIGHT : {inputs[i].Right} =={Environment.NewLine}");
             partOne.Add(new(i + 1, inputs[i], isOrdered));
         }
         
@@ -46,8 +45,6 @@ abstract class Program
             {
                 case (JValue intLeft, JValue intRight) when intLeft.Value<int>() != intRight.Value<int>():
                     isOrdered = intLeft.Value<int>() < intRight.Value<int>();
-                    Console.WriteLine($"L : {JsonSerializer.Serialize(leftArray)}{Environment.NewLine}R : {
-                            JsonSerializer.Serialize(rightArray)}{Environment.NewLine}");
                     Console.WriteLine(isOrdered.Value
                         ? "Left side is smaller, so inputs are in the right order"
                         : "Right side is smaller, so inputs are not in the right order");
@@ -65,9 +62,6 @@ abstract class Program
                     isOrdered = CheckOrder(new JArray() { intLeft.Value<int>() }, arrayRight);
                     break;
                 case (_, null):
-                    Console.WriteLine($"{Environment.NewLine}L : {
-                        JsonSerializer.Serialize(leftArray)}{Environment.NewLine}R : {
-                            JsonSerializer.Serialize(rightArray)}{Environment.NewLine}");
                     Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
                     Console.WriteLine();
                     isOrdered = false;
