@@ -15,7 +15,6 @@ internal abstract class Program
 
         var partOne = inputOne.Select((signal, index) => (Index: index + 1, Signal: signal,
             IsOrdered: CheckOrder(JArray.Parse(signal.Left), JArray.Parse(signal.Right)))).ToArray();
-
         Console.WriteLine($"Part One : {partOne.Where(w => w.IsOrdered ?? true).Sum(s => s.Index)}");
 
         var inputTwo = File.ReadAllLines("inputs.txt").Where(w => !string.IsNullOrEmpty(w)).ToList();
@@ -82,28 +81,22 @@ internal abstract class Program
     }
 
     private static IList<string> SortPackets(IList<string> packets)
-    {   
-        var sortedPackets = packets;
-        
-        for (var i = 0; i < sortedPackets.Count - 1;)
+    {
+        for (var i = 0; i < packets.Count - 1;)
         {
-            if (!CheckOrder(JArray.Parse(sortedPackets[i]), JArray.Parse(sortedPackets[i + 1])) ?? true)
+            if (!CheckOrder(JArray.Parse(packets[i]), JArray.Parse(packets[i + 1])) ?? true)
             {
-                sortedPackets.Swap(i, i + 1);
+                packets.Swap(i, i + 1);
                 i -= i == 0 ? 0 : 1;
             }
             else i++;
         }
 
-        return sortedPackets;
+        return packets;
     }
 }
 
 public static class ListExtensions
 {
-    public static IList<T> Swap<T>(this IList<T> list, int from, int to)
-    {
-        (list[from], list[to]) = (list[to], list[from]);
-        return list;
-    }
+    public static void Swap<T>(this IList<T> list, int from, int to) => (list[from], list[to]) = (list[to], list[from]);
 }
