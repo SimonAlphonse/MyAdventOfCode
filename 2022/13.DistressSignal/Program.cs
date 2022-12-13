@@ -1,33 +1,29 @@
-﻿using System.Text.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 
 namespace DistressSignal;
 
-abstract class Program
+internal abstract class Program
 {
-    record Signal(string Left, string Right);
+    private record Signal(string Left, string Right);
 
     public static void Main()
     {
-        var inputs = File.ReadAllText("inputs.txt")
+        var inputOne = File.ReadAllText("inputs.txt")
             .Split($"{Environment.NewLine}{Environment.NewLine}")
             .Select(s => new Signal(s.Split(Environment.NewLine).First(),
                 s.Split(Environment.NewLine).Last())).ToArray();
 
-        List<(int Index, Signal Signal, bool? IsOrdered)> partOne = new();
-
-        for (int i = 0; i < inputs.Length; i++)
-        {
-            var isOrdered = CheckOrder(JArray.Parse(inputs[i].Left), JArray.Parse(inputs[i].Right));
-            Console.WriteLine($"[{i + 1}] [{isOrdered}]{Environment.NewLine}{Environment.NewLine
-            }== LEFT : {inputs[i].Left} =={Environment.NewLine}== RIGHT : {inputs[i].Right} =={Environment.NewLine}");
-            partOne.Add(new(i + 1, inputs[i], isOrdered));
-        }
-
-        // var partOne = inputs.Select((signal, index) => (Index: index + 1, Signal: signal,
-        //     IsOrdered: CheckOrder(JArray.Parse(signal.Left), JArray.Parse(signal.Right)))).ToArray();
+        var partOne = inputOne.Select((signal, index) => (Index: index + 1, Signal: signal,
+            IsOrdered: CheckOrder(JArray.Parse(signal.Left), JArray.Parse(signal.Right)))).ToArray();
 
         Console.WriteLine($"Part One : {partOne.Where(w => w.IsOrdered ?? true).Sum(s => s.Index)}");
+
+        var inputTwo = File.ReadAllLines("inputs.txt").Where(w => !string.IsNullOrEmpty(w)).ToList();
+        inputTwo.AddRange(new[] { "[[2]]", "[[6]]" });
+
+        var arrangedPackets = SortPackets(inputTwo);
+        Console.WriteLine($"Part Two : {(arrangedPackets.IndexOf("[[2]]") + 1)
+                                        * (arrangedPackets.IndexOf("[[6]]") + 1)}");
 
         Console.Read();
     }
@@ -45,51 +41,35 @@ abstract class Program
             {
                 case (JValue intLeft, JValue intRight) when intLeft.Value<int>() != intRight.Value<int>():
                     isOrdered = intLeft.Value<int>() < intRight.Value<int>();
-                    Console.WriteLine(isOrdered.Value
-                        ? "Left side is smaller, so inputs are in the right order"
-                        : "Right side is smaller, so inputs are not in the right order");
-                    Console.WriteLine();
                     break;
                 case (JValue intLeft, JValue intRight) when intLeft.Value<int>() == intRight.Value<int>():
                     break;
                 case (JArray arrayLeft, JArray arrayRight) when arrayLeft.Any() && !arrayRight.Any():
                     isOrdered = false;
-                    Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
-                    Console.WriteLine();
                     break;
                 case (JArray arrayLeft, JArray arrayRight) when !arrayLeft.Any() && arrayRight.Any():
                     isOrdered = true;
-                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
-                    Console.WriteLine();
                     break;
                 case (JArray arrayLeft, JArray arrayRight):
                     isOrdered = CheckOrder(arrayLeft, arrayRight);
                     break;
                 case (JArray arrayLeft, JValue) when !arrayLeft.Any():
                     isOrdered = true;
-                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
-                    Console.WriteLine();
                     break;
                 case (JArray arrayLeft, JValue intRight):
                     isOrdered = CheckOrder(arrayLeft, new JArray() { intRight.Value<int>() });
                     break;
                 case (JValue, JArray arrayRight) when !arrayRight.Any():
                     isOrdered = false;
-                    Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
-                    Console.WriteLine();
                     break;
                 case (JValue intLeft, JArray arrayRight):
                     isOrdered = CheckOrder(new JArray() { intLeft.Value<int>() }, arrayRight);
                     break;
                 case (null, _):
                     isOrdered = true;
-                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
-                    Console.WriteLine();
                     break;
                 case (_, null):
                     isOrdered = false;
-                    Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
-                    Console.WriteLine();
                     break;
                 default:
                     throw new InvalidDataException($"{left},{right}");
@@ -99,5 +79,31 @@ abstract class Program
         }
 
         return isOrdered;
+    }
+
+    private static IList<string> SortPackets(IList<string> packets)
+    {   
+        var sortedPackets = packets;
+        
+        for (var i = 0; i < sortedPackets.Count - 1;)
+        {
+            if (!CheckOrder(JArray.Parse(sortedPackets[i]), JArray.Parse(sortedPackets[i + 1])) ?? true)
+            {
+                sortedPackets.Swap(i, i + 1);
+                i -= i == 0 ? 0 : 1;
+            }
+            else i++;
+        }
+
+        return sortedPackets;
+    }
+}
+
+public static class ListExtensions
+{
+    public static IList<T> Swap<T>(this IList<T> list, int from, int to)
+    {
+        (list[from], list[to]) = (list[to], list[from]);
+        return list;
     }
 }
