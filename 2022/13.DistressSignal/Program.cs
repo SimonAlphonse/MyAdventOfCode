@@ -19,11 +19,11 @@ abstract class Program
         for (int i = 0; i < inputs.Length; i++)
         {
             var isOrdered = CheckOrder(JArray.Parse(inputs[i].Left), JArray.Parse(inputs[i].Right));
-            Console.WriteLine($"[{i+1}] [{isOrdered}]{Environment.NewLine}{Environment.NewLine
+            Console.WriteLine($"[{i + 1}] [{isOrdered}]{Environment.NewLine}{Environment.NewLine
             }== LEFT : {inputs[i].Left} =={Environment.NewLine}== RIGHT : {inputs[i].Right} =={Environment.NewLine}");
             partOne.Add(new(i + 1, inputs[i], isOrdered));
         }
-        
+
         // var partOne = inputs.Select((signal, index) => (Index: index + 1, Signal: signal,
         //     IsOrdered: CheckOrder(JArray.Parse(signal.Left), JArray.Parse(signal.Right)))).ToArray();
 
@@ -35,10 +35,10 @@ abstract class Program
     private static bool? CheckOrder(JArray leftArray, JArray rightArray)
     {
         bool? isOrdered = null;
-        
-        for (var i = 0; i < leftArray.Count; i++)
+
+        for (var i = 0; i < int.Max(leftArray.Count, rightArray.Count); i++)
         {
-            JToken left = leftArray.Skip(i).First();
+            JToken? left = leftArray.Skip(i).FirstOrDefault();
             JToken? right = rightArray.Skip(i).FirstOrDefault();
 
             switch (left, right)
@@ -52,19 +52,44 @@ abstract class Program
                     break;
                 case (JValue intLeft, JValue intRight) when intLeft.Value<int>() == intRight.Value<int>():
                     break;
+                case (JArray arrayLeft, JArray arrayRight) when arrayLeft.Any() && !arrayRight.Any():
+                    isOrdered = false;
+                    Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
+                    Console.WriteLine();
+                    break;
+                case (JArray arrayLeft, JArray arrayRight) when !arrayLeft.Any() && arrayRight.Any():
+                    isOrdered = true;
+                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
+                    Console.WriteLine();
+                    break;
                 case (JArray arrayLeft, JArray arrayRight):
                     isOrdered = CheckOrder(arrayLeft, arrayRight);
+                    break;
+                case (JArray arrayLeft, JValue) when !arrayLeft.Any():
+                    isOrdered = true;
+                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
+                    Console.WriteLine();
                     break;
                 case (JArray arrayLeft, JValue intRight):
                     isOrdered = CheckOrder(arrayLeft, new JArray() { intRight.Value<int>() });
                     break;
+                case (JValue, JArray arrayRight) when !arrayRight.Any():
+                    isOrdered = false;
+                    Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
+                    Console.WriteLine();
+                    break;
                 case (JValue intLeft, JArray arrayRight):
                     isOrdered = CheckOrder(new JArray() { intLeft.Value<int>() }, arrayRight);
                     break;
+                case (null, _):
+                    isOrdered = true;
+                    Console.WriteLine("Left side ran out of items, so inputs are in the right order");
+                    Console.WriteLine();
+                    break;
                 case (_, null):
+                    isOrdered = false;
                     Console.WriteLine("Right side ran out of items, so inputs are not in the right order");
                     Console.WriteLine();
-                    isOrdered = false;
                     break;
                 default:
                     throw new InvalidDataException($"{left},{right}");
