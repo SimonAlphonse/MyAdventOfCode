@@ -18,7 +18,7 @@ internal abstract class Program
 
         var scanTwo = ScanFloor(scanOne, drawing);
         DrawRockSand(scanTwo, source, out drawing);
-        DropSand(source, drawing, true);
+        DropSand(new Point(-1, 500), drawing, true);
         ExportToTextFile("PartTwo.txt", drawing);
         Console.WriteLine($"Part Two : {drawing.Cast<char>().Count(c => c == 'o')}");
 
@@ -53,10 +53,11 @@ internal abstract class Program
             switch (left, middle, right)
             {
                 case ('o' or '#', 'o' or '#', 'o' or '#'):
-                    if (drawing[sand.X, sand.Y] == '+') 
+                    if (hasFloor && drawing[sand.X, sand.Y] == '+') 
                         stop = true;
                     drawing[sand.X, sand.Y] = 'o';
-                    sand = hasFloor ? source with { X = source.X - 1 } : new Point(source.X, source.Y);
+                    // sand = hasFloor ? source with { X = source.X - 1 } : new Point(source.X, source.Y);
+                    sand = new Point(source.X, source.Y);
                     path = new();
                     break;
                 case ('.', 'o' or '#', _):
@@ -85,11 +86,12 @@ internal abstract class Program
         var rows = scan.SelectMany(a => a.Select(b => b.Y)).ToArray().Max() + 1;
 
         drawing = new char[rows, columns];
-        drawing = DrawSand(source, drawing);
+        drawing = DrawSand(drawing);
         drawing = DrawRock(scan, drawing);
+        drawing[source.X, source.Y] = '+';
     }
 
-    private static char[,] DrawSand(Point source, char[,] drawing)
+    private static char[,] DrawSand(char[,] drawing)
     {
         for (var i = 0; i < drawing.GetLength(0); i++)
         {
@@ -98,8 +100,6 @@ internal abstract class Program
                 drawing[i, j] = '.';
             }
         }
-
-        drawing[source.X, source.Y] = '+';
         
         return drawing;
     }
