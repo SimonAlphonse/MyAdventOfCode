@@ -62,15 +62,6 @@ internal abstract class Program
     }
 }
 
-public static class ArrayExtensions
-{
-    public static int[] Fill(this int[] range)
-    {
-        var min = range.Min();
-        return Enumerable.Range(min, range.Max() - min + 1).ToArray();
-    }
-}
-
 public static class PointExtensions
 {
     public static Point[] Till(this Point from, Point to)
