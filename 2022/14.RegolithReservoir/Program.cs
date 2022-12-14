@@ -6,59 +6,135 @@ internal abstract class Program
 {
     public static void Main()
     {
-        var inputs = File.ReadAllLines("inputs.txt")
-            .Select(x => x.Split(" -> ")
-                .Select(y => y.Split(","))
-                .Select(z => new Point(int.Parse(z.First()), int.Parse(z.Last())))
-                .ToArray()).ToArray();
+        var scanOne = File.ReadAllLines("inputs.txt")
+            .Select(x => x.Split(" -> ").Select(y => y.Split(","))
+                .Select(z => new Point(int.Parse(z.First()), int.Parse(z.Last()))).ToArray()).ToList();
 
-        var source = CreateMap(inputs, out var map);
+        var source = new Point(0, 500);
+        DrawRockSand(scanOne, source, out var drawing);
+        DropSand(source, drawing, false);
+        ExportToTextFile("PartOne.txt", drawing);
+        Console.WriteLine($"Part One : {drawing.Cast<char>().Count(c => c == 'o')}");
 
+        var scanTwo = ScanFloor(scanOne, drawing);
+        DrawRockSand(scanTwo, source, out drawing);
+        DropSand(source, drawing, true);
+        ExportToTextFile("PartTwo.txt", drawing);
+        Console.WriteLine($"Part Two : {drawing.Cast<char>().Count(c => c == 'o')}");
+
+        Console.Read();
     }
 
-    private static Point CreateMap(Point[][] inputs, out char[,] map)
+    private static List<Point[]> ScanFloor(List<Point[]> scanOne, char[,] drawing)
     {
-        var columns = inputs.SelectMany(a => a.Select(b => b.X)).ToArray().Max() + 1 + 10;
-        var rows = inputs.SelectMany(a => a.Select(b => b.Y)).ToArray().Max() + 1 + 10;
-        map = new char[rows, columns];
-
-        for (var i = 0; i < map.GetLength(0); i++)
+        var scanTwo = new List<Point[]>(scanOne);
+        scanTwo.Add(new[]
         {
-            for (var j = 0; j < map.GetLength(1); j++)
+            new Point(0, drawing.GetLength(0) - 1 + 2),
+            new Point(2 * drawing.GetLength(1) - 1, drawing.GetLength(0) - 1 + 2),
+        });
+        return scanTwo;
+    }
+
+    private static void DropSand(Point source, char[,] drawing, bool hasFloor)
+    {
+        var stop = false;
+        var sand = new Point(source.X, source.Y);
+        var path = new List<Point>();
+        
+        while (!stop)
+        {
+            path.Add(sand = sand with { X = sand.X + 1 });
+            
+            var left = drawing[sand.X + 1, sand.Y - 1];
+            var middle = drawing[sand.X + 1, sand.Y];
+            var right = drawing[sand.X + 1, sand.Y + 1];
+
+            switch (left, middle, right)
             {
-                map[i, j] = '.';
+                case ('o' or '#', 'o' or '#', 'o' or '#'):
+                    if (drawing[sand.X, sand.Y] == '+') 
+                        stop = true;
+                    drawing[sand.X, sand.Y] = 'o';
+                    sand = hasFloor ? source with { X = source.X - 1 } : new Point(source.X, source.Y);
+                    path = new();
+                    break;
+                case ('.', 'o' or '#', _):
+                    sand = sand with { X = sand.X - 1, Y = sand.Y - 1 };
+                    break;
+                case (_, 'o' or '#', '.'):
+                    sand = sand with { X = sand.X - 1, Y = sand.Y + 1 };
+                    break;
+                case (_, '.', _): break;
+                default: throw new ApplicationException("🤬");
+            }
+
+            if (sand.X + 1 + (hasFloor ? 0 : 1) == drawing.GetLength(0))
+            {
+                stop = true;
+                path.Add(sand with { X = sand.X + 1 });
+                foreach (var point in path)
+                    drawing[point.X, point.Y] = '~';
             }
         }
-        
-        var source = new Point(0, 500);
-        map[source.X, source.Y] = '+';
+    }
 
-        foreach (var list in inputs)
+    private static void DrawRockSand(List<Point[]> scan, Point source, out char[,] drawing)
+    {
+        var columns = scan.SelectMany(a => a.Select(b => b.X)).ToArray().Max() + 1;
+        var rows = scan.SelectMany(a => a.Select(b => b.Y)).ToArray().Max() + 1;
+
+        drawing = new char[rows, columns];
+        drawing = DrawSand(source, drawing);
+        drawing = DrawRock(scan, drawing);
+    }
+
+    private static char[,] DrawSand(Point source, char[,] drawing)
+    {
+        for (var i = 0; i < drawing.GetLength(0); i++)
+        {
+            for (var j = 0; j < drawing.GetLength(1); j++)
+            {
+                drawing[i, j] = '.';
+            }
+        }
+
+        drawing[source.X, source.Y] = '+';
+        
+        return drawing;
+    }
+
+    private static char[,] DrawRock(List<Point[]> scan, char[,] drawing)
+    {
+        foreach (var list in scan)
         {
             for (var j = 0; j < list.Length - 1; j++)
             {
                 foreach (var point in list[j].Till(list[j + 1]))
                 {
-                    map[point.Y, point.X] = '#';
+                    drawing[point.Y, point.X] = '#';
                 }
             }
         }
-        
-        File.Delete("Print.txt");
-        
-        using StreamWriter file = new("Print.txt", append: true);
 
-        for (var i = 0; i < map.GetLength(0); i++)
+        return drawing;
+    }
+
+    private static void ExportToTextFile(string fileName, char[,] drawing)
+    {
+        File.Delete(fileName);
+
+        using StreamWriter file = new(fileName, append: true);
+
+        for (var i = 0; i < drawing.GetLength(0); i++)
         {
-            for (var j = 0; j < map.GetLength(1); j++)
+            for (var j = 0; j < drawing.GetLength(1); j++)
             {
-                file.Write(map[i, j]);
+                file.Write(drawing[i, j]);
             }
 
             file.Write(Environment.NewLine);
         }
-        
-        return source;
     }
 }
 
@@ -68,13 +144,13 @@ public static class PointExtensions
     {
         if (from.Y == to.Y)
         {
-            return Enumerable.Range(Math.Min(from.X, to.X), 
+            return Enumerable.Range(Math.Min(from.X, to.X),
                     Math.Max(from.X, to.X) - Math.Min(from.X, to.X) + 1)
                 .Select(x => to with { X = x }).ToArray();
         }
         else if (from.X == to.X)
         {
-            return Enumerable.Range(Math.Min(from.Y, to.Y), 
+            return Enumerable.Range(Math.Min(from.Y, to.Y),
                     Math.Max(from.Y, to.Y) - Math.Min(from.Y, to.Y) + 1)
                 .Select(y => to with { Y = y }).ToArray();
         }
