@@ -56,7 +56,6 @@ internal abstract class Program
                     if (hasFloor && drawing[sand.X, sand.Y] == '+') 
                         stop = true;
                     drawing[sand.X, sand.Y] = 'o';
-                    // sand = hasFloor ? source with { X = source.X - 1 } : new Point(source.X, source.Y);
                     sand = new Point(source.X, source.Y);
                     path = new();
                     break;
@@ -110,7 +109,7 @@ internal abstract class Program
         {
             for (var j = 0; j < list.Length - 1; j++)
             {
-                foreach (var point in list[j].Till(list[j + 1]))
+                foreach (var point in list[j].GetPointsTill(list[j + 1]))
                 {
                     drawing[point.Y, point.X] = '#';
                 }
@@ -140,7 +139,7 @@ internal abstract class Program
 
 public static class PointExtensions
 {
-    public static Point[] Till(this Point from, Point to)
+    public static Point[] GetPointsTill(this Point from, Point to)
     {
         if (from.Y == to.Y)
         {
