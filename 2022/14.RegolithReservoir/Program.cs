@@ -81,13 +81,17 @@ internal abstract class Program
 
     private static void DrawRockSand(List<Point[]> scan, Point source, out char[,] drawing)
     {
-        var columns = scan.SelectMany(a => a.Select(b => b.X)).ToArray().Max() + 1;
-        var rows = scan.SelectMany(a => a.Select(b => b.Y)).ToArray().Max() + 1;
-
-        drawing = new char[rows, columns];
+        drawing = CreateChart(scan);
         drawing = DrawSand(drawing);
         drawing = DrawRock(scan, drawing);
         drawing[source.X, source.Y] = '+';
+    }
+
+    private static char[,] CreateChart(List<Point[]> scan)
+    {
+        var columns = scan.SelectMany(a => a.Select(b => b.X)).Max() + 1;
+        var rows = scan.SelectMany(a => a.Select(b => b.Y)).Max() + 1;
+        return new char[rows, columns];
     }
 
     private static char[,] DrawSand(char[,] drawing)
