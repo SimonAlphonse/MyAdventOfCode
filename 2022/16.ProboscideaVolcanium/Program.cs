@@ -1,22 +1,70 @@
-﻿namespace ProboscideaVolcanium;
+﻿using System.Collections;
+
+namespace ProboscideaVolcanium;
 
 internal abstract class Program
 {
     record Valve(string Id, int FlowRate, string[] Valves);
+    record Combination(List<Valve> Valves, Stack<Valve> Stack);
 
     public static void Main()
     {
         var valves = File.ReadAllLines("inputs-demo.txt")
             .Select(s => s.Replace(",", string.Empty).Split(' '))
-            .Select(s => new KeyValuePair<string, Valve>(s[1], new Valve(s[1], int.Parse(s[4][5..^1]), s[9..])))
+            .Select(s => new KeyValuePair<string, Valve>(
+                s[1], new Valve(s[1], int.Parse(s[4][5..^1]), s[9..])))
             .ToDictionary(k => k.Key, v => v.Value);
 
-        var history = ReleasePressure(valves, 30, new List<List<Valve>>());
+        var start = valves["AA"];
+
+        var history = ReleasePressure(valves, new()
+        {
+            new(new() { start },
+                new(new List<Valve>() { start }))
+        });
 
         Console.Read();
     }
 
-    private static List<List<Valve>> ReleasePressure(Dictionary<string, Valve> valves, int minutes, List<List<Valve>> history)
+    private static List<Combination> ReleasePressure(Dictionary<string, Valve> valves, List<Combination> combinations)
+    {
+        for (var i = 0; i < combinations.Count;)
+        {
+            var open = combinations[i].Valves;
+            if (open.Count >= 30)
+            {
+                i++;
+                continue;
+            }
+
+            var pending = valves.Values.Except(open).ToArray();
+            if (pending.Length == 0)
+            {
+                i++; 
+                continue;
+            }
+
+            var stack = combinations[i].Stack;
+            var openIds = open.Select(s => s.Id).ToArray();
+            var connected = open.Last().Valves.Except(openIds).Select(s => valves[s]).ToArray();
+            if (connected.Length == 0)
+            {
+                stack.Pop();
+                open.Add(stack.Last());
+            }
+
+            foreach (var valve in connected)
+            {
+                open.Add(valve);
+                // stack.Push(valve);
+
+            }
+        }
+
+        return combinations;
+    }
+
+    private static List<List<Valve>> ReleasePressure2(Dictionary<string, Valve> valves, int minutes, List<List<Valve>> history)
     {
         List<Valve> open = new() { valves["AA"] };
 
