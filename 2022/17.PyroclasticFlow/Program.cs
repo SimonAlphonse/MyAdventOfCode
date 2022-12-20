@@ -1,5 +1,8 @@
-﻿using System.Collections.Concurrent;
-using System.Drawing;
+﻿using System.Drawing;
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Runtime.InteropServices.ComTypes;
+using System.Xml;
 
 namespace PyroclasticFlow;
 
@@ -12,53 +15,59 @@ internal abstract class Program
 
         var shapes = new[]
         {
-            new[,] { { '#', '#', '#', '#' } },
-            new[,] { { '.', '#', '.' }, { '#', '#', '#' }, { '.', '#', '.' }, },
-            new[,] { { '.', '.', '#' }, { '.', '.', '#' }, { '#', '#', '#' }, },
-            new[,] { { '#' }, { '#' }, { '#' }, { '#' }, },
-            new[,] { { '#', '#' }, { '#', '#' }, },
+            new[,] { { '#', '#', '#', '#' } }.ToJagged(),
+            new[,] { { '.', '#', '.' }, { '#', '#', '#' }, { '.', '#', '.' }, }.ToJagged(),
+            new[,] { { '.', '.', '#' }, { '.', '.', '#' }, { '#', '#', '#' }, }.ToJagged(),
+            new[,] { { '#' }, { '#' }, { '#' }, { '#' }, }.ToJagged(),
+            new[,] { { '#', '#' }, { '#', '#' }, }.ToJagged(),
         };
 
         var points = shapes.Select(s => s.FindPoints('#')).ToArray();
-        int wave = 0, height = shapes.Max(s => s.GetLength(0)) * 2022;
-        Point gap = new(3, 2), start = gap with { X = height - gap.X }, position = start;
-        var space = '.'.CreateArray(7, height);
-        
+        int wave = 0, gap = 3, width = 7, height = shapes.Max(s => s.GetLength(0)) * 2022;
+        Point start = new(height - gap, 2), position = start.OffsetRowBy(shapes[0].Length - 1);
+        var space = '.'.ToArray(height, width, x => '.');
+
         for (var rock = 0; rock < 2022;)
         {
-            position = ChangePositionByWind(position, space, wind, wave++);
-
             var shapeNo = rock % shapes.Length;
-            var @base = GetBase(space, shapes[shapeNo], position);
-            var shapePoints = points[shapeNo];
-            var basePoints = @base.FindPoints('#');
 
-            if (basePoints.Length > 0)
+            position = ChangePositionByWind(position, wind, wave++, shapes[shapeNo].Max(x => x.Length));
+
+            var @base = GetBase(space, points[shapeNo].Last(), position);
+
+            if (@base.Contains('#'))
             {
-                space = space.DrawShape(shapes[shapeNo], position, '#');
-                position = position with { X = position.X - gap.X, Y = 2 };
+                space.DrawShape(points[shapeNo], position.OffsetRowBy(-1), '#');
+                var floor = space.Find('#', out var temp) ? temp.X : throw new WarningException("🤬");
+                position = position with { X = floor - gap - shapes[0].Length + 1, Y = 2 };
                 rock++;
             }
             else
             {
-                position = position with { X = position.X + 1 };
+                position = position.OffsetRowBy(1);
             }
 
             space.Export("PartOne.txt");
         }
+
+        Console.ReadKey();
     }
 
-    private static char[,] GetBase(char[,] space, char[,] shape, Point position)
+    private static char[] GetBase(char[][] space, Point[] points, Point position)
     {
-        var @base = new char[1, shape.GetLength(1)]; // todo only consider # on bottom of the row of shape
-        for (var column = 0; column < @base.GetLongLength(1); column++)
-            @base[0, column] = space[position.X + shape.GetLength(0), column];
-        return @base;
+        return points.Select(s => s.OffsetBy(position))
+            .Select(s =>
+                s.X < space.Length
+                    ? space[s.X][s.Y]
+                    : '#').ToArray();
     }
 
-    private static Point ChangePositionByWind(Point position, char[,] space, int[] wind, int index)
+    private static Point ChangePositionByWind(Point position, int[] wind, int index, int width)
     {
-        return position = position with { Y = position.Y + GetWindForce(wind, index) };
+        var point = position.OffsetColumnBy(GetWindForce(wind, index));
+        var offset = 6 - (point.Y + (width - 1));
+        if (offset < 0) point = point.OffsetColumnBy(offset);
+        return point;
     }
 
     private static int GetWindForce(int[] wind, int index)
@@ -67,81 +76,101 @@ internal abstract class Program
     }
 }
 
+public static class PointExtensions
+{
+    public static Point OffsetBy(this Point a, Point b)
+    {
+        return a with { X = a.X + b.X, Y = a.Y + b.Y };
+    }
+
+    public static Point OffsetRowBy(this Point point, int offset)
+    {
+        return point with { X = point.X + offset  };
+    }
+    
+    public static Point OffsetColumnBy(this Point point, int offset)
+    {
+        return point with { Y = point.Y + offset };
+    }
+}
+
 public static class ArrayExtensions
 {
-    public static bool Find<T>(this T[,] array, T value, out Point position) where T : struct
+    public static bool Find<T>(this T[][] array, T value, out Point position) where T : struct
     {
         var point = Point.Empty;
 
-        Parallel.For(0, array.GetLength(0),
-            (x, state) =>
+        Parallel.For(0, array.Length, (x, state) =>
+        {
+            for (var y = 0; y < array[x].Length; y++)
             {
-                for (var y = 0; y < array.GetLength(1); y++)
+                if (array[x][y].Equals(value))
                 {
-                    if (array[x, y].Equals(value))
-                    {
-                        point = new Point(x, y);
-                        state.Stop();
-                    }
+                    point = new Point(x, y);
+                    state.Stop();
                 }
-            });
+            }
+        });
 
         position = point;
 
         return !position.IsEmpty;
     }
-    
-    public static Point[] FindPoints<T>(this T[,] array, T value) where T : struct
+
+    public static Point[][] FindPoints<T>(this T[][] array, T value) where T : struct
     {
         ConcurrentBag<Point> points = new();
 
-        Parallel.For(0, array.GetLength(0), x =>
+        Parallel.For(0, array.Length, x =>
         {
-            for (var y = 0; y < array.GetLength(1); y++)
+            Parallel.For(0, array[x].Length, y =>
             {
-                if (array[x, y].Equals(value))
+                if (array[x][y].Equals(value))
                 {
-                    points.Add(new Point(x, y));
+                    points.Add(new(x, y));
                 }
-            }
+            });
         });
 
-        return points.ToArray();
+        return points.GroupBy(point => point.X).OrderBy(o => o.Key)
+            .Select(g => g.OrderBy(o => o.X).ThenBy(o => o.Y).ToArray()).ToArray();
     }
-    
-    public static char[,] DrawShape(this char[,] space, char[,] shape, Point point, char @char)
-    {
-        
-        return default;
-    }
-    
-    public static char[,] CreateArray(this char @char, int rows, int columns)
-    {
-        var space = new char[columns, rows];
 
-        for (var x = 0; x < space.GetLength(0); x++)
+    public static char[][] DrawShape(this char[][] space, Point[][] shape, Point point, char @char)
+    {
+        foreach (var item in shape.SelectMany(s => s))
         {
-            for (var y = 0; y < space.GetLength(1); y++)
-            {
-                space[x, y] = @char;
-            }
+            space[item.X + point.X][item.Y + point.Y] = @char;
         }
 
         return space;
     }
-    
-    public static void Export<T>(this T[,] array, string fileName, bool append = false)
+
+    public static void Export<T>(this T[][] array, string fileName, bool append = false)
     {
         using StreamWriter file = new(fileName, append);
 
-        for (var i = 0; i < array.GetLength(0); i++)
+        foreach (var item in array.Select((row, index) => (row, index)))
         {
-            for (var j = 0; j < array.GetLength(1); j++)
+            foreach (var field in item.row)
             {
-                file.Write($"{array[i, j]}");
+                file.Write($"{field}");
             }
 
-            file.Write(Environment.NewLine);
+            if (item.index < array.Length - 1)
+                file.Write(Environment.NewLine);
         }
+    }
+
+    public static T[][] ToArray<T>(this T @char, int rows, int columns, Func<int, T> selector) where T : struct
+    {
+        return Enumerable.Range(0, rows).Select(x =>
+            Enumerable.Range(0, columns).Select(selector).ToArray()).ToArray();
+    }
+
+    public static T[][] ToJagged<T>(this T[,] array)
+    {
+        return Enumerable.Range(0, array.GetLength(0)).Select(x =>
+            Enumerable.Range(0, array.GetLength(1)).Select(y => array[x, y]).ToArray()).ToArray();
     }
 }
