@@ -1,23 +1,15 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
+﻿namespace RockPaperScissors;
 
-public class Program
+public abstract class Program
 {
-    record GameOne(char Opponent, char Me);
-    record GameTwo(char Opponent, char Result);
+    private record GameOne(char Opponent, char Me);
+    private record GameTwo(char Opponent, char Result);
 
     public static void Main(string[] args)
     {
         var lines = File.ReadAllLines("inputs.txt");
-
-        List<GameOne> firstSet = lines.Select(s => new GameOne(s.First(), s.Last())).ToList();
-        Console.WriteLine($"First : {GetScore(firstSet)}");
-        
-        List<GameTwo> secondSet = lines.Select(s => new GameTwo(s.First(), s.Last())).ToList();
-        Console.WriteLine($"Second : {GetScore(secondSet)}");
-
+        Console.WriteLine($"Part One : {GetScore(lines.Select(s => new GameOne(s.First(), s.Last())))}");
+        Console.WriteLine($"Part Two : {GetScore(lines.Select(s => new GameTwo(s.First(), s.Last())))}");
         Console.Read();
     }
 

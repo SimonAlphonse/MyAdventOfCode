@@ -1,30 +1,22 @@
-﻿using System.Runtime.ExceptionServices;
-using System.Security.AccessControl;
-
-namespace CampCleanup
+﻿namespace CampCleanup
 {
-    public class Program
+    public abstract class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
             var lines = File.ReadAllLines("inputs.txt");
 
-            var elfsWithIds = lines.Select(a => a.Split(',')
+            var elvesWithIds = lines.Select(a => a.Split(',')
                                    .Select(b => b.Split('-')
-                                   .Select(int.Parse).FillRange().ToList()).ToList())
+                                   .Select(int.Parse).ToArray().FillRange()).ToArray())
                                    .Select(d => (
                                         First: d.First(),
                                         Second: d.Last(),
                                         Common: d.First().Intersect(d.Last()).ToList()
                                     )).ToList();
 
-            var idleElvesCount = elfsWithIds.Count(s => s.Common.SequenceEqual(s.First) || s.Common.SequenceEqual(s.Second));
-
-            Console.WriteLine($"First : {idleElvesCount}");
-
-            var overlappedElvesCount = elfsWithIds.Count(s => s.Common.Any());
-
-            Console.WriteLine($"Second : {overlappedElvesCount}");
+            Console.WriteLine($"Part One : {elvesWithIds.Count(s => s.Common.SequenceEqual(s.First) || s.Common.SequenceEqual(s.Second))}");
+            Console.WriteLine($"Part Two : {elvesWithIds.Count(s => s.Common.Any())}");
 
             Console.ReadKey();
         }
@@ -32,10 +24,10 @@ namespace CampCleanup
 
     public static class Extensions
     {
-        public static IEnumerable<int> FillRange(this IEnumerable<int> range)
+        public static int[] FillRange(this int[] range)
         {
             var min = range.Min();
-            return Enumerable.Range(min, range.Max() - min + 1);
+            return Enumerable.Range(min, range.Max() - min + 1).ToArray();
         }
     }
 }

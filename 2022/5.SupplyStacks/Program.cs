@@ -20,7 +20,7 @@ namespace SupplyStacks
 
             var instructions = inputs.Last().Select(s =>
                 s.Split(" ", StringSplitOptions.RemoveEmptyEntries)
-                 .Where(w => int.TryParse(w, out var _))
+                 .Where(w => int.TryParse(w, out _))
                  .Select(int.Parse).ToList())
                  .Select(x => new Instruction(Count: x.First(), From: x.Skip(1).First(), To: x.Last())).ToList();
 
