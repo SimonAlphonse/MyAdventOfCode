@@ -5,8 +5,8 @@ var criteria = new Rgb() { Red = 12, Green = 13, Blue = 14 };
 var games = lines.Select(line => new Game
 (
     int.Parse(line.Split(':').First()[4..]),
-    ParseSets(line.Split(": ").Last())
-)).ToList();
+    line.Split(": ").Last().Split("; ").Select(ParseRgb).ToArray()
+)).ToArray();
 
 var sum1 = games.Where(w => w.Rgb.All(a => 
         a.Red <= criteria.Red && 
@@ -16,15 +16,14 @@ var sum1 = games.Where(w => w.Rgb.All(a =>
 
 Console.WriteLine($"Part One : {sum1}");
 
-//Console.WriteLine($"Part Two : {sum2}");
+var sum2 = games.Sum(s => 
+    s.Rgb.Max(m => m.Red) * 
+    s.Rgb.Max(m => m.Green) * 
+    s.Rgb.Max(m => m.Blue));
+
+Console.WriteLine($"Part Two : {sum2}");
 
 Console.Read();
-
-static Rgb[] ParseSets(string sets)
-{
-    return sets.Split("; ").Select(set =>
-            ParseRgb(set)).ToArray();
-}
 
 static Rgb ParseRgb(string set)
 {
@@ -44,8 +43,7 @@ static Rgb ParseRgb(string set)
 }
 
 record Game(int SNo, Rgb[] Rgb);
-
-public record Rgb
+record Rgb
 {
     public int Red { get; set; }
     public int Green { get; set; }
