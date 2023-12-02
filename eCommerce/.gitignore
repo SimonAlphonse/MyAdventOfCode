@@ -1,0 +1,14 @@
+# Visual Studio
+.vs
+
+# Visual Studio Code
+.vscode
+
+# Rider
+.idea
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
