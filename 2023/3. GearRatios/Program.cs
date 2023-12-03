@@ -1,15 +1,14 @@
-﻿using System.Drawing;
-using System.Globalization;
-using System.IO;
+﻿using Extensions;
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
-using System.Security;
-using Extensions;
 
 internal class Program
 {
     private static void Main(string[] args)
     {
-        var file = "sample.txt";
+        var file = "inputs.txt";
 
         char[] numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         char[] symbols = File.ReadAllText(file)
@@ -19,17 +18,19 @@ internal class Program
 
         var lines = File.ReadLines(file).ToArray();
         Size size = new(lines.First().Length, lines.Length);
-        int sum1 = 0, sum2 = 0;
 
         PartInfo[] partsInfo = GetPartInfo(lines, size);
 
-        sum1 += partsInfo.Where(w => w.AdjacentValues.Intersect(symbols).Any()).Sum(s => s.Value);
-
-        //var ok = partsInfo.Where(w => w.AdjacentValues.Contains('*')).ToArray();
+        int sum1 = partsInfo.Where(w => w.AdjacentPoints.Values.Intersect(symbols).Any()).Sum(s => s.Value);
 
         Console.WriteLine($"Part One : {sum1}");
 
-        //Console.WriteLine($"Part Two : {sum2}");
+        var partsWithGear = partsInfo.Where(w => w.AdjacentPoints.ContainsValue('*'))
+            .Select(s => (s.Value, Point: s.AdjacentPoints.Where(w => w.Value == '*').Select(s => s.Key).First()));
+
+        int sum2 = partsWithGear.GroupBy(g => g.Point).Where(w => w.Count() == 2).Sum(s => s.Aggregate(1, (a, b) => a * b.Value));
+
+        Console.WriteLine($"Part Two : {sum2}");
 
         Console.Read();
     }
@@ -43,14 +44,16 @@ internal class Program
             var indices = lines[y].GetNumberIndices();
 
             partsInfo.AddRange(indices.SplitConsecutive().Select(s => s.Select(s => new Point(y, s)))
-               .Select(s => (Value: int.Parse(string.Join(string.Empty, s.Select(s => lines[s.X][s.Y]))), AdjacentPoints: s.GetAdjacentPoints(size)))
-               .Select(s => new PartInfo(s.Value, s.Item2.Select(s => lines[s.X][s.Y]).ToArray(), s.AdjacentPoints)));
+               .Select(s => (
+                    Value: int.Parse(string.Join(string.Empty, s.Select(s => lines[s.X][s.Y]))),
+                    AdjacentPoints: s.GetAdjacentPoints(size).ToDictionary(key => key, d => lines[d.X][d.Y])))
+               .Select(s => new PartInfo(s.Value, s.AdjacentPoints)));
         }
 
         return partsInfo.ToArray();
     }
 
-    internal record struct PartInfo(int Value, char[] AdjacentValues, Point[] AdjacentPoints);
+    internal record struct PartInfo(int Value, Dictionary<Point, char> AdjacentPoints);
 }
 
 
@@ -63,6 +66,7 @@ namespace Extensions
             return line.Select((_, index) => index).Where(index => char.IsNumber(line[index])).ToArray();
         }
     }
+
     public static class IntExtensions
     {
         public static IEnumerable<IEnumerable<int>> SplitConsecutive(this IEnumerable<int> values)
