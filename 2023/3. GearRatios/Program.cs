@@ -7,7 +7,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var file = "inputs.txt";
+        var file = "sample.txt";
 
         char[] numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         char[] symbols = File.ReadAllText(file)
@@ -24,12 +24,11 @@ internal class Program
             var indices = lines[y].Select((_, index) => index)
                 .Where(index => char.IsNumber(lines[y][index])).ToArray();
 
-            sum1 += indices.SplitConsecutive()
-                .Where(s => symbols.Intersect(
-                    s.SelectMany(s => new Point(y, s)
-                        .GetAdjacentPoints(size)
-                        .Select(w => lines[w.X][w.Y]))
-                    ).Any()).Select(s => int.Parse(string.Join(string.Empty, s.Select(s => lines[y][s])))).Sum();
+            var parts = indices.SplitConsecutive().Select(s => s.Select(s => new Point(y, s)))
+                .Select(s => (int.Parse(string.Join(string.Empty, s.Select(s => lines[s.X][s.Y]))), s.GetAdjacentPoints(size)))
+                .Select(s => (Value: s.Item1, adjValues: s.Item2.Select(s => lines[s.X][s.Y]), adjPoints: s.Item2));
+
+            sum1 += parts.Where(w => w.adjValues.Intersect(symbols).Any()).Sum(s => s.Value);
         }
 
         Console.WriteLine($"Part One : {sum1}");
