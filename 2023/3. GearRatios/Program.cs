@@ -1,6 +1,8 @@
 ﻿using System.Drawing;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Security;
 using Extensions;
 
 internal class Program
@@ -17,31 +19,50 @@ internal class Program
 
         var lines = File.ReadLines(file).ToArray();
         Size size = new(lines.First().Length, lines.Length);
-        int sum1 = 0;
+        int sum1 = 0, sum2 = 0;
 
-        for (int y = 0; y < size.Width; y++)
-        {
-            var indices = lines[y].Select((_, index) => index)
-                .Where(index => char.IsNumber(lines[y][index])).ToArray();
+        PartInfo[] partsInfo = GetPartInfo(lines, size);
 
-            var parts = indices.SplitConsecutive().Select(s => s.Select(s => new Point(y, s)))
-                .Select(s => (int.Parse(string.Join(string.Empty, s.Select(s => lines[s.X][s.Y]))), s.GetAdjacentPoints(size)))
-                .Select(s => (Value: s.Item1, adjValues: s.Item2.Select(s => lines[s.X][s.Y]), adjPoints: s.Item2));
+        sum1 += partsInfo.Where(w => w.AdjacentValues.Intersect(symbols).Any()).Sum(s => s.Value);
 
-            sum1 += parts.Where(w => w.adjValues.Intersect(symbols).Any()).Sum(s => s.Value);
-        }
+        //var ok = partsInfo.Where(w => w.AdjacentValues.Contains('*')).ToArray();
 
         Console.WriteLine($"Part One : {sum1}");
-
 
         //Console.WriteLine($"Part Two : {sum2}");
 
         Console.Read();
     }
+
+    private static PartInfo[] GetPartInfo(string[] lines, Size size)
+    {
+        List<PartInfo> partsInfo = [];
+
+        for (int y = 0; y < size.Width; y++)
+        {
+            var indices = lines[y].GetNumberIndices();
+
+            partsInfo.AddRange(indices.SplitConsecutive().Select(s => s.Select(s => new Point(y, s)))
+               .Select(s => (Value: int.Parse(string.Join(string.Empty, s.Select(s => lines[s.X][s.Y]))), AdjacentPoints: s.GetAdjacentPoints(size)))
+               .Select(s => new PartInfo(s.Value, s.Item2.Select(s => lines[s.X][s.Y]).ToArray(), s.AdjacentPoints)));
+        }
+
+        return partsInfo.ToArray();
+    }
+
+    internal record struct PartInfo(int Value, char[] AdjacentValues, Point[] AdjacentPoints);
 }
+
 
 namespace Extensions
 {
+    public static class StringExtensions
+    {
+        public static int[] GetNumberIndices(this string line)
+        {
+            return line.Select((_, index) => index).Where(index => char.IsNumber(line[index])).ToArray();
+        }
+    }
     public static class IntExtensions
     {
         public static IEnumerable<IEnumerable<int>> SplitConsecutive(this IEnumerable<int> values)
@@ -86,3 +107,4 @@ namespace Extensions
         }
     }
 }
+
