@@ -121,6 +121,6 @@ public class Trebuchet
             .Select(s => s.Where(w => int.TryParse(w.ToString(), out _))
             .Select(x => int.Parse(x.ToString())))
             .Select(s => $"{s.First()}{s.Last()}")
-            .Select(s => int.Parse(s)).Sum();
+            .Select(int.Parse).Sum();
     }
 }
