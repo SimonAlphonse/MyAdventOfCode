@@ -6,19 +6,31 @@ public abstract class Program
     {
         var lines = File.ReadAllLines("inputs.txt");
 
-        var priorities = Enumerable.Range('a', 'z' - 'a' + 1).Select((s, i) => KeyValuePair.Create((char)s, i + 1))
-            .Concat(Enumerable.Range('A', 'Z' - 'A' + 1).Select((s, i) => KeyValuePair.Create((char)s, i + 1 + 26)))
-            .ToDictionary(x => x.Key, y => y.Value);
+        var priorities = Enumerable.Range('a', 'z' - 'a' + 1)
+            .Concat(Enumerable.Range('A', 'Z' - 'A' + 1))
+            .Select(s => (char)s).ToList();
 
-        var markers = lines.Select(line => line.Chunk(line.Length / 2)).Select(GetCommonItem);
-        Console.WriteLine($"Part One : {markers.Sum(s => priorities[s])}");
+        var markers = lines.Select(line => line.Chunk(line.Length / 2)).Select(s => s.Intersect().First());
+        Console.WriteLine($"Part One : {markers.Sum(s => priorities.IndexOf(s) + 1)}");
 
-        var badges = lines.Chunk(3).Select(GetCommonItem);
-        Console.WriteLine($"Part Two : {badges.Sum(s => priorities[s])}");
+        var badges = lines.Chunk(3).Select(s => s.Intersect().First());
+        Console.WriteLine($"Part Two : {badges.Sum(s => priorities.IndexOf(s) + 1)}");
 
         Console.ReadKey();
     }
+}
 
-    private static T GetCommonItem<T>(IEnumerable<IEnumerable<T>> chunk) =>
-        chunk.First().First(t => chunk.All(a => a.Contains(t)));
+public static class Extensions
+{
+    public static IEnumerable<T> Intersect<T>(this IEnumerable<IEnumerable<T>> collections)
+    {
+        if (collections.Count() <= 1) { return Array.Empty<T>(); }
+
+        IEnumerable<T> common = collections.First();
+
+        foreach (var collection in collections.Skip(1))
+            common = common.Intersect(collection);
+
+        return common;
+    }
 }
