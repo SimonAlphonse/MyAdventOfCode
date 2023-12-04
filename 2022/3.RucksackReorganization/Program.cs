@@ -24,11 +24,11 @@ public static class Extensions
 {
     public static IEnumerable<T> Intersect<T>(this IEnumerable<IEnumerable<T>> collections)
     {
-        if (collections.Count() <= 1) { return Array.Empty<T>(); }
+        if (collections.Count() < 2) { return Array.Empty<T>(); }
 
-        IEnumerable<T> common = collections.First();
+        IEnumerable<T> common = collections.First().Intersect(collections.Skip(1).First());
 
-        foreach (var collection in collections.Skip(1))
+        foreach (var collection in collections.Skip(2))
             common = common.Intersect(collection);
 
         return common;
