@@ -28,16 +28,21 @@ internal abstract class Program
         for (var rock = 0; rock < 2022;)
         {
             var shapeNo = rock % shapes.Length;
-            position = Foo(space, shapes[shapeNo], position, wind[wave++ % wind.Length]);
+            Console.Write($"[{wave}] [{wind[wave % wind.Length]}] {position.X}, {position.Y} --> ");
+            position = Foo(space, points[shapeNo], position, wind[wave++ % wind.Length]);
+            Console.WriteLine($"{position.Y}");
 
-            if (IsDeadEnd(space, points[shapeNo].Last(), position.OffsetRowBy(1)))
+            if (IsOverlap(space, points[shapeNo], position))
             {
-                space.DrawShape(points[shapeNo], position, '#');
-                space.Export("PartOne.txt"); Console.WriteLine();
+                space.DrawShape(points[shapeNo], position.OffsetRowBy(-1), '#');
+                space.Export("PartOne.txt");
+                Console.WriteLine();
                 position = new(space.Find('#').X - gap - shapes[++rock % shapes.Length].Length, 2);
             }
             else
+            {
                 position = position.OffsetRowBy(1);
+            }
         }
 
         Console.ReadKey();
@@ -45,26 +50,26 @@ internal abstract class Program
 
     private static Point Foo(char[][] space, Point[][] points, Point position, int force)
     {
-        var height = points.Length;
+        var point = position;
         var width = points.Max(x => x.Length);
 
         var isWall = force switch
         {
-            // 1 => IsDeadEnd(space,points.SelectMany(x=>x)),
-            _ => false
+            1 => point.Y + width > 6 || IsOverlap(space, points, position.OffsetColumnBy(1)),
+            _ => point.Y == 0 || IsOverlap(space, points, position.OffsetColumnBy(-1)),
         };
         
-        var point = position.OffsetColumnBy(force);
-        var offset = 6 - (point.Y + width - 1);
-        if (offset < 0) point = point.OffsetColumnBy(offset);
-        Console.WriteLine($"{point.Y}");
+        if (!isWall)
+            point = point.OffsetColumnBy(force);
+        
         return point;
     }
 
-    private static bool IsDeadEnd(char[][] space, IEnumerable<Point> points, Point position)
+    private static bool IsOverlap(char[][] space, IEnumerable<Point[]> points, Point position)
     {
-        return points.Select(s => s.OffsetBy(position))
-            .Select(s => s.X < space.Length ? space[s.X][s.Y] : '#').Contains('#');
+        return points.SelectMany(s=>s).Select(s => s.OffsetBy(position))
+            .Select(s => s.X < space.Length && s.Y < space[0].Length 
+                ? space[s.X][s.Y] : '#').Contains('#');
     }
 }
 
@@ -72,7 +77,7 @@ public static class PointExtensions
 {
     public static Point OffsetBy(this Point a, Point b)
     {
-        return a with { X = a.X + b.X, Y = a.Y + b.Y };
+        return new Point(a.X + b.X, a.Y + b.Y);
     }
 
     public static Point OffsetRowBy(this Point point, int offset)
@@ -83,6 +88,11 @@ public static class PointExtensions
     public static Point OffsetColumnBy(this Point point, int offset)
     {
         return point with { Y = point.Y + offset };
+    }
+
+    public static Point Transpose(this Point point)
+    {
+        return new Point(point.Y, point.X);
     }
 }
 
@@ -126,12 +136,12 @@ public static class ArrayExtensions
 
     public static T[][] DrawShape<T>(this T[][] space, Point[][] shape, Point point, T @char)
     {
-        foreach (var item in shape.SelectMany(s => s))
-            space[item.X + point.X][item.Y + point.Y] = @char;
+        foreach (var item in shape.SelectMany(x => x.Select(y => y.OffsetBy(point))))
+            space[item.X][item.Y] = @char;
 
         return space;
     }
-    
+
     public static T[][] Replace<T>(this T[][] array, T find, T replace) where T : struct
     {
         Parallel.For(0, array.Length, x =>
@@ -142,7 +152,7 @@ public static class ArrayExtensions
                     array[x][y] = replace;
             });
         });
-        
+
         return array;
     }
 
@@ -178,9 +188,20 @@ public static class ArrayExtensions
     {
         return array.Select(s => s.Skip(column).First()).ToArray();
     }
-    
+
     public static T[] GetLastColumn<T>(this T[][] array)
     {
         return array.Select(s => s.Last()).ToArray();
+    }
+
+    public static T[][] Transpose<T>(this T[][] array) where T : struct
+    {
+        var result = default(T).ToArray(array.Max(s => s.Length), array.Length);
+
+        Enumerable.Range(0, array.Length).ToList().ForEach(x =>
+            Enumerable.Range(0, array[x].Length).ToList().ForEach(y =>
+                result[y][x] = array[x][y]));
+
+        return result;
     }
 }
