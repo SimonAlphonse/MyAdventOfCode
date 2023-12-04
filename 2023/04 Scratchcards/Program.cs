@@ -1,5 +1,4 @@
 ﻿using Extensions;
-using System.Drawing;
 
 internal class Program
 {
@@ -9,14 +8,27 @@ internal class Program
 
         var cards = lines.Select(s => s.Split(':')).Select(s => (int.Parse(s.First()[4..]),
             s.Last().Split('|').Select(s => s.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => int.Parse(s)).ToArray()).ToArray())).ToArray();
+                .Select(s => int.Parse(s)))));
 
-        var sum1 = cards.Select(s => (s.Item1, s.Item2.First().Intersect(s.Item2.Last()).Count()))
-            .Where(w => w.Item2 > 0).Sum(s => Math.Pow(2, s.Item2 - 1));
+        var wins = cards.Select(s => (s.Item1, s.Item2.First().Intersect(s.Item2.Last()).Count())).ToArray();
+        var sum1 = wins.Where(w => w.Item2 > 0).Sum(s => Math.Pow(2, s.Item2 - 1));
 
         Console.WriteLine($"Part One : {sum1}");
 
-        //Console.WriteLine($"Part Two : {}");
+        var lookup = wins.ToDictionary(s => s.Item1, s => Enumerable.Range(s.Item1 + 1, s.Item2).ToArray());
+
+        List<int> scratched = [.. lookup.Where(w => w.Value.Length == 0).Select(s => s.Key).ToArray()];
+        List<int> pile = [.. lookup.Where(w => w.Value.Length > 0).Select(s => s.Key).ToArray()];
+
+        do
+        {
+            var copies = pile.SelectMany(s => lookup[s]).ToArray();
+            scratched.AddRange(pile);
+            pile.Clear();
+            pile.AddRange(copies);
+        } while (pile.Count > 0);
+
+        Console.WriteLine($"Part Two : {scratched.Count}");
 
         Console.Read();
     }
