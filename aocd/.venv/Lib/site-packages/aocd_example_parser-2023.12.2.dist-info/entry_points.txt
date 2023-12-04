@@ -1,0 +1,4 @@
+[adventofcode.examples]
+reference=aocd_example_parser:reference
+simple=aocd_example_parser:simple
+

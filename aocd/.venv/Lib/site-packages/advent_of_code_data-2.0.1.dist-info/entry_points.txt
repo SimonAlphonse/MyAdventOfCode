@@ -1,0 +1,5 @@
+[console_scripts]
+aoc = aocd.runner:main
+aocd = aocd.cli:main
+aocd-token = aocd.cookies:scrape_session_tokens
+aoce = aocd.examples:main
