@@ -1,42 +1,64 @@
 ﻿using Extensions;
+using System.Collections.Concurrent;
 using System.Numerics;
+using System.Linq;
 
 var lines = File.ReadAllText("inputs.txt")
     .Split($"{Environment.NewLine}{Environment.NewLine}").ToArray();
 
-var locations = GetLocations<BigInteger>(lines[0]);
+var seeds = lines[0][7..].Split(' ').Select(s => long.Parse(s)).ToArray();
+
+var locations = seeds.AsParallel().Select(s => GetSeedLocation(s, lines)).ToArray();
 
 Console.WriteLine($"Part One : {locations.Min()}");
 
-//Console.WriteLine($"Part Two : {}");
+locations = GetMoreSeedsLocations(seeds, lines).ToArray();
+
+Console.WriteLine($"Part Two : {locations.Min()}");
 
 Console.Read();
 
-IEnumerable<T> GetLocations<T>(string seeds) where T : INumber<T>
+T GetSeedLocation<T>(T seed, string[] lines) where T : INumber<T>
 {
-    foreach (var seed in seeds[7..].Split(' ').Select(s => T.Parse(s, default)))
+    var cache = seed;
+
+    foreach (var line in lines[1..].Select(s => s.Split(':').Last()))
     {
-        var cache = seed;
+        var maps = line.Trim().Split(Environment.NewLine)
+            .Select(s => s.Split(' ').Select(s => T.Parse(s, default)).ToArray())
+            .Select(s => new Map<T>(s[1], s[0], s[2])).ToArray();
 
-        foreach (var line in lines[1..].Select(s => s.Split(':').Last()))
-        {
-            var split = line.Trim().Split(Environment.NewLine)
-                .Select(s => s.Split(' ').Select(s => T.Parse(s, default)).ToArray());
-
-            cache = GetLocation(split.Select(s => new Map<T>(s[1], s[0], s[2])), cache);
-        }
-
-        yield return cache;
+        cache = GetLocation(maps, cache);
     }
+
+    Console.WriteLine($"{seed} -> {cache}");
+
+    return cache;
 }
 
-T GetLocation<T>(IEnumerable<Map<T>> maps, T seed) where T : INumber<T>
+IEnumerable<T> GetMoreSeedsLocations<T>(T[] seeds, string[] lines) where T : INumber<T>
 {
-    foreach (var map in maps)
+    ConcurrentBag<T> locations = [];
+
+    Parallel.ForEach(seeds.Chunk(2), chunk =>
+    //foreach (var chunk in seeds.Chunk(2))
     {
-        if (map.Source <= seed && seed < map.Source + map.Range)
-            return map.Destination + seed - map.Source;
-    }
+        var temp = GenericExtensions.Range(chunk.First(), chunk.Last())
+            .AsParallel().Select(seed => GetSeedLocation(seed, lines)).ToArray();
+
+        foreach (var item in temp)
+        {
+            locations.Add(item);
+        }
+    });
+
+    return locations;
+}
+
+T GetLocation<T>(Map<T>[] maps, T seed) where T : INumber<T>
+{
+    foreach (var map in maps.Where(map => map.Source <= seed && seed < map.Source + map.Range))
+        return map.Destination + seed - map.Source;
 
     return seed;
 }
@@ -49,7 +71,7 @@ namespace Extensions
     {
         public static IEnumerable<T> Range<T>(T start, T range) where T : INumber<T>
         {
-            for (var i = T.Zero + start; i < start + range; i++)
+            for (var i = T.Zero; i < range; i++)
                 yield return start + i;
         }
     }
