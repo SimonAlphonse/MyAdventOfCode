@@ -1,11 +1,10 @@
 ﻿using Extensions;
 using System.Numerics;
 
-var lines = File.ReadAllText("sample.txt")
-    .Split($"{Environment.NewLine}{Environment.NewLine}");
+var lines = File.ReadAllText("inputs.txt")
+    .Split($"{Environment.NewLine}{Environment.NewLine}").ToArray();
 
-var lookup = GetLookup<BigInteger>(lines[1..]).ToArray();
-var locations = GetLocations(lines[0], lookup);
+var locations = GetLocations<BigInteger>(lines[0]);
 
 Console.WriteLine($"Part One : {locations.Min()}");
 
@@ -13,30 +12,36 @@ Console.WriteLine($"Part One : {locations.Min()}");
 
 Console.Read();
 
-IEnumerable<T> GetLocations<T>(string seeds, Dictionary<T, T>[] lookup) where T : INumber<T>
+IEnumerable<T> GetLocations<T>(string seeds) where T : INumber<T>
 {
     foreach (var seed in seeds[7..].Split(' ').Select(s => T.Parse(s, default)))
     {
-        T cache = seed;
+        var cache = seed;
 
-        foreach (var map in lookup)
-            if (map.TryGetValue(cache, out T value))
-                cache = value;
+        foreach (var line in lines[1..].Select(s => s.Split(':').Last()))
+        {
+            var split = line.Trim().Split(Environment.NewLine)
+                .Select(s => s.Split(' ').Select(s => T.Parse(s, default)).ToArray());
+
+            cache = GetLocation(split.Select(s => new Map<T>(s[1], s[0], s[2])), cache);
+        }
 
         yield return cache;
-    };
-}
-
-IEnumerable<Dictionary<T, T>> GetLookup<T>(IEnumerable<string> lines) where T:INumber<T>
-{
-    foreach (var line in lines.Select(s => s.Split(':').Last()))
-    {
-        yield return line.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
-            .Select(s => s.Split(' ').Select(s => T.Parse(s, default)).ToArray())
-            .SelectMany(s => GenericExtensions.Range<T>(T.Zero, s[2])
-            .ToDictionary(i => s[1] + i, i => s[0] + i)).ToDictionary();
     }
 }
+
+T GetLocation<T>(IEnumerable<Map<T>> maps, T seed) where T : INumber<T>
+{
+    foreach (var map in maps)
+    {
+        if (map.Source <= seed && seed < map.Source + map.Range)
+            return map.Destination + seed - map.Source;
+    }
+
+    return seed;
+}
+
+record Map<T>(T Source, T Destination, T Range) where T : INumber<T>;
 
 namespace Extensions
 {
