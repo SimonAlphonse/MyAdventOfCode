@@ -4,7 +4,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var inputs = File.ReadAllLines("inputs.txt")
+        var inputs = File.ReadAllLines("sample.txt")
             .Select(s => s.Split(':').Last()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(int.Parse).ToArray()).ToArray();
@@ -25,7 +25,7 @@ internal class Program
     {
         foreach (var record in records)
         {
-            yield return Enumerable.Range(1, record.Time - 1)
+            yield return Enumerable.Range(0, record.Time)
                 .Select(hold => hold * (record.Time - hold))
                 .Where(w => w > record.Distance).Count();
         }
