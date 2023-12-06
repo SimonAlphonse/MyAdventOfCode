@@ -18,7 +18,7 @@ internal class Program
         var race = new Race<long>(long.Parse(string.Join(string.Empty, races.Select(s => s.Time))),
             long.Parse(string.Join(string.Empty, races.Select(s => s.Distance))));
 
-        Console.WriteLine($"Part Two : {GetWinCount(race, 14)}");
+        Console.WriteLine($"Part Two : {GetRecordCount(race, 14)}");
 
         Console.Read();
     }
@@ -26,10 +26,10 @@ internal class Program
     private static IEnumerable<int> GetRecordCounts<T>(Race<T>[] races) where T:INumber<T>
     {
         foreach (var race in races)
-            yield return GetWinCount(race, T.Zero);
+            yield return GetRecordCount(race, T.Zero);
     }
 
-    private static int GetWinCount<T>(Race<T> race, T start) where T : INumber<T>
+    private static int GetRecordCount<T>(Race<T> race, T start) where T : INumber<T>
     {
         return GenericExtensions.Range(start, race.Time + T.One).AsParallel()
             .Select(hold => hold * (race.Time - hold)).Count(w => w > race.Distance);
