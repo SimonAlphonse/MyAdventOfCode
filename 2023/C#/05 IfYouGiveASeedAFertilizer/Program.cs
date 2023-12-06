@@ -31,28 +31,25 @@ T GetSeedLocation<T>(T seed, string[] lines) where T : INumber<T>
         cache = GetLocation(maps, cache);
     }
 
-    Console.WriteLine($"{seed} -> {cache}");
+    //Console.WriteLine($"{seed} -> {cache}");
 
     return cache;
 }
 
 IEnumerable<T> GetMoreSeedsLocations<T>(T[] seeds, string[] lines) where T : INumber<T>
 {
-    ConcurrentBag<T> locations = [];
+    ConcurrentBag<T> result = [];
 
     Parallel.ForEach(seeds.Chunk(2), chunk =>
     //foreach (var chunk in seeds.Chunk(2))
     {
-        var temp = GenericExtensions.Range(chunk.First(), chunk.Last())
+        var locations = GenericExtensions.Range(chunk.First(), chunk.Last())
             .AsParallel().Select(seed => GetSeedLocation(seed, lines)).ToArray();
 
-        foreach (var item in temp)
-        {
-            locations.Add(item);
-        }
+        locations.AsParallel().ForAll(result.Add);
     });
 
-    return locations;
+    return result;
 }
 
 T GetLocation<T>(Map<T>[] maps, T seed) where T : INumber<T>
