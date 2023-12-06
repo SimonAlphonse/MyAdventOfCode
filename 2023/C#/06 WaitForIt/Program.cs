@@ -5,7 +5,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var inputs = File.ReadAllLines("sample.txt")
+        var inputs = File.ReadAllLines("inputs.txt")
             .Select(s => s.Split(':').Last()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(long.Parse).ToArray()).ToArray();
@@ -15,8 +15,9 @@ internal class Program
 
         Console.WriteLine($"Part One : {GetRecordCounts(races).Aggregate((a, b) => a * b)}");
 
-        var race = new Race<long>(long.Parse(string.Join(string.Empty, races.Select(s => s.Time))),
-            long.Parse(string.Join(string.Empty, races.Select(s => s.Distance))));
+        Race<long> race = races.Aggregate((x, y) => new(
+            long.Parse($"{x.Time}{y.Time}"),
+            long.Parse($"{x.Distance}{y.Distance}")));
 
         Console.WriteLine($"Part Two : {GetRecordCount(race, 14)}");
 
