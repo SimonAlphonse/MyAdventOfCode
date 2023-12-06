@@ -10,13 +10,13 @@ internal class Program
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(long.Parse).ToArray()).ToArray();
 
-        var records = GenericExtensions.Range<long>(0, inputs[0].Length)
+        var races = GenericExtensions.Range<long>(0, inputs[0].Length)
             .Select(i => new Race<long>(Time: inputs[0][i], Distance: inputs[1][i])).ToArray();
 
-        Console.WriteLine($"Part One : {GetRecordCounts(records).Aggregate((a, b) => a * b)}");
+        Console.WriteLine($"Part One : {GetRecordCounts(races).Aggregate((a, b) => a * b)}");
 
-        var race = new Race<long>(long.Parse(string.Join(string.Empty, records.Select(s => s.Time))),
-            long.Parse(string.Join(string.Empty, records.Select(s => s.Distance))));
+        var race = new Race<long>(long.Parse(string.Join(string.Empty, races.Select(s => s.Time))),
+            long.Parse(string.Join(string.Empty, races.Select(s => s.Distance))));
 
         Console.WriteLine($"Part Two : {GetWinCount(race, 14)}");
 
@@ -32,7 +32,7 @@ internal class Program
     private static int GetWinCount<T>(Race<T> race, T start) where T : INumber<T>
     {
         return GenericExtensions.Range(start, race.Time + T.One).AsParallel()
-            .Select(hold => hold * (race.Time - hold)).Count<T>(w => w > race.Distance);
+            .Select(hold => hold * (race.Time - hold)).Count(w => w > race.Distance);
     }
 }
 
