@@ -8,6 +8,17 @@ internal class Program
         var inputs = File.ReadAllLines("inputs.txt");
         var values = inputs.Select(x => new List<List<long>>() { x.Split(' ').Select(long.Parse).ToList() }).ToArray();
 
+        Console.WriteLine($"Part One : {Forecast(values).Sum(s => s[0][^1])}");
+
+        var reverse = inputs.Select(x => new List<List<long>>() { x.Split(' ').Select(long.Parse).Reverse().ToList() }).ToArray();
+
+        Console.WriteLine($"Part Two : {Forecast(reverse).Sum(s => s[0][^1])}");
+
+        Console.Read();
+    }
+
+    private static List<List<long>>[] Forecast(List<List<long>>[] values)
+    {
         for (int row = 0; row < values.Length; row++)
         {
             bool @continue;
@@ -34,13 +45,7 @@ internal class Program
             }
         }
 
-        var sum1 = values.Sum(s => s[0][^1]);
-
-        //Console.WriteLine($"Part One : {}");
-
-        //Console.WriteLine($"Part Two : {}");
-
-        Console.Read();
+        return values;
     }
 }
 
