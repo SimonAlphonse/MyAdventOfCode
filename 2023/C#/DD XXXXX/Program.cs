@@ -4,7 +4,7 @@ internal class Program
 {
     private static void Main(string[] args)
     {
-        var lines = File.ReadAllLines("inputs.txt");
+        var lines = File.ReadAllLines("sample.txt");
 
         //Console.WriteLine($"Part One : {}");
 
