@@ -15,13 +15,13 @@ namespace OneBrc
 
             var measurements = ReadMeasurements(fileName, 100 * 1024 * 1024);
 
-            Console.WriteLine(stopwatch.Elapsed.TotalSeconds);
+            Console.WriteLine($"{stopwatch.Elapsed.TotalSeconds:F2} s");
             Console.ReadKey();
         }
 
-        public static List<Measurement> ReadMeasurements(string fileName, int chunkSize)
+        public static List<Measurement> ReadMeasurements(string fileName, long chunkSize)
         {
-            var measurements = new ConcurrentBag<List<Measurement>>();
+            var allMeasurements = new ConcurrentBag<List<Measurement>>();
 
             long total = new FileInfo(fileName).Length;
 
@@ -29,17 +29,22 @@ namespace OneBrc
             {
                 var posisions = GetPosisions(mmf, total, chunkSize);
 
+                ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
                 //for (int i = 0; i < posisions.Length; i++)
-                Parallel.For(0, posisions.Length, i =>
+                Parallel.For(0, posisions.Length, parallelOptions, i =>
                 {
-                    measurements.Add(ReadMeasurements(mmf, posisions[i]));
+                    var stopwatch = new Stopwatch(); stopwatch.Start();
+                    var measurements = ReadMeasurements(mmf, posisions[i]);
+                    Console.WriteLine($"{i} : {measurements.Count()} -> {stopwatch.Elapsed.TotalSeconds:F2} s");
+                    allMeasurements.Add(measurements.ToList());
                 });
             }
 
-            return measurements.SelectMany(s => s).ToList();
+            return allMeasurements.SelectMany(s => s).ToList();
         }
 
-        private static Position[] GetPosisions(MemoryMappedFile mmf, long total, int chunk)
+        private static Position[] GetPosisions(MemoryMappedFile mmf, long total, long chunk)
         {
             using var stream = mmf.CreateViewStream(0, total);
             var bytes = new byte[1];
@@ -61,7 +66,7 @@ namespace OneBrc
             return positions.ToArray();
         }
 
-        private static List<Measurement> ReadMeasurements(MemoryMappedFile mmf, Position position)
+        private static IEnumerable<Measurement> ReadMeasurements(MemoryMappedFile mmf, Position position)
         {
             using MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor(position.Start, position.End - position.Start);
 
@@ -69,8 +74,6 @@ namespace OneBrc
             var bytes = new byte[1];
             byte[] byteCity = default;
             byte[] byteTemperature = default;
-
-            List<Measurement> measurements = [];
 
             while (i < accessor.Capacity)
             {
@@ -85,15 +88,13 @@ namespace OneBrc
                 {
                     byteTemperature = new byte[length];
                     accessor.ReadArray(i - length, byteTemperature, 0, length);
-                    measurements.Add(new(byteCity, float.Parse(byteTemperature)));
+                    yield return new(byteCity, float.Parse(byteTemperature));
                     length = 0;
                 }
                 else { length++; }
 
                 i++;
             }
-
-            return measurements;
         }
     }
 
@@ -102,10 +103,5 @@ namespace OneBrc
     public struct Measurement(byte[] City, float Temperature)
     {
         //public readonly string GetCity() => Encoding.UTF8.GetString(City);
-
-        //public override readonly string ToString()
-        //{
-        //    return $"{Encoding.UTF8.GetString(City)}:{Temperature}"; ;
-        //}
     }
 }
