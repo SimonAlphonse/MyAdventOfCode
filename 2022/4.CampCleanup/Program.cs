@@ -8,12 +8,12 @@
 
             var elvesWithIds = lines.Select(a => a.Split(',')
                                    .Select(b => b.Split('-')
-                                   .Select(int.Parse).ToArray().FillRange()).ToArray())
+                                   .Select(int.Parse).FillRange()))
                                    .Select(d => (
                                         First: d.First(),
                                         Second: d.Last(),
-                                        Common: d.First().Intersect(d.Last()).ToList()
-                                    )).ToList();
+                                        Common: d.First().Intersect(d.Last())
+                                    ));
 
             Console.WriteLine($"Part One : {elvesWithIds.Count(s => s.Common.SequenceEqual(s.First) || s.Common.SequenceEqual(s.Second))}");
             Console.WriteLine($"Part Two : {elvesWithIds.Count(s => s.Common.Any())}");
@@ -24,7 +24,7 @@
 
     public static class Extensions
     {
-        public static int[] FillRange(this int[] range)
+        public static int[] FillRange(this IEnumerable<int> range)
         {
             var min = range.Min();
             return Enumerable.Range(min, range.Max() - min + 1).ToArray();
