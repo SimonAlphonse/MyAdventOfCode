@@ -91,7 +91,7 @@ namespace OneBrc
                 {
                     byteTemperature = new byte[length];
                     accessor.ReadArray(i - length, byteTemperature, 0, length);
-                    yield return new(new(i - length, length), float.Parse(byteTemperature));
+                    yield return new(byteCity, float.Parse(byteTemperature));
                     length = 0;
                 }
                 else { length++; }
@@ -103,7 +103,7 @@ namespace OneBrc
 
     public record Position(long Start, long Length);
 
-    public struct Measurement(Position Position, float Temperature)
+    public struct Measurement(byte[] City, float Temperature)
     {
         //public readonly string GetCity() => Encoding.UTF8.GetString(City);
     }
