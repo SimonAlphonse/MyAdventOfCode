@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Collections.Concurrent;
+using System.Diagnostics.Metrics;
 
 namespace OneBrc
 {
@@ -29,6 +30,9 @@ namespace OneBrc
             {
                 var posisions = GetPosisions(mmf, total, chunkSize);
 
+                Console.WriteLine($"{posisions.Count()} Chunks");
+                Console.WriteLine();
+
                 ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
                 //for (int i = 0; i < posisions.Length; i++)
@@ -36,7 +40,7 @@ namespace OneBrc
                 {
                     var stopwatch = new Stopwatch(); stopwatch.Start();
                     var measurements = ReadMeasurements(mmf, posisions[i]);
-                    Console.WriteLine($"{i} : {measurements.Count()} -> {stopwatch.Elapsed.TotalSeconds:F2} s");
+                    Console.WriteLine($"{DateTime.Now:t} | {i} : {measurements.Count()} -> {stopwatch.Elapsed.TotalSeconds:F2} s");
                     allMeasurements.Add(measurements.ToList());
                 });
             }
@@ -53,14 +57,14 @@ namespace OneBrc
             do
             {
                 var last = positions.LastOrDefault();
-                long start = last?.End + 1 ?? 0;
+                long start = last?.Start + last?.Length + 1 ?? 0;
                 if (start > total) { break; }
 
                 stream.Seek(chunk, SeekOrigin.Current);
                 do stream.Read(bytes, 0, 1);
                 while (bytes[0] != '\n' && bytes[0] != 0);
 
-                positions.Add(new(start, Math.Min(stream.Position, total)));
+                positions.Add(new(start, Math.Min(stream.Position, total) - start));
             } while (true);
 
             return positions.ToArray();
@@ -68,7 +72,7 @@ namespace OneBrc
 
         private static IEnumerable<Measurement> ReadMeasurements(MemoryMappedFile mmf, Position position)
         {
-            using MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor(position.Start, position.End - position.Start);
+            using MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor(position.Start, position.Length);
 
             int i = 0; int length = 0;
             var bytes = new byte[1];
@@ -81,14 +85,13 @@ namespace OneBrc
                 {
                     byteCity = new byte[length];
                     accessor.ReadArray(i - length, byteCity, 0, length);
-                    var city = Encoding.UTF8.GetString(byteCity);
                     length = 0;
                 }
                 else if (accessor.ReadByte(i) == '\n')
                 {
                     byteTemperature = new byte[length];
                     accessor.ReadArray(i - length, byteTemperature, 0, length);
-                    yield return new(byteCity, float.Parse(byteTemperature));
+                    yield return new(new(i - length, length), float.Parse(byteTemperature));
                     length = 0;
                 }
                 else { length++; }
@@ -98,9 +101,9 @@ namespace OneBrc
         }
     }
 
-    public record Position(long Start, long End);
+    public record Position(long Start, long Length);
 
-    public struct Measurement(byte[] City, float Temperature)
+    public struct Measurement(Position Position, float Temperature)
     {
         //public readonly string GetCity() => Encoding.UTF8.GetString(City);
     }
