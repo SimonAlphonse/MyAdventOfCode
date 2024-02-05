@@ -1,8 +1,6 @@
-﻿using System.Text;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Collections.Concurrent;
-using System.Diagnostics.Metrics;
 
 namespace OneBrc
 {
@@ -14,7 +12,13 @@ namespace OneBrc
 
             var fileName = @"C:\Users\Windows\source\repos\1brc\measurements.txt";
 
-            var measurements = ReadMeasurements(fileName, 100 * 1024 * 1024);
+            var measurements = ReadMeasurements(fileName, 200 * 1024 * 1024);
+
+            var averageTask = Task.Run(() => Console.WriteLine($"{measurements.Average(x=> x.Temperature):F4}"));
+            var minTask = Task.Run(() => Console.WriteLine($"{measurements.Min(x=> x.Temperature):F4}"));
+            var maxTask = Task.Run(() => Console.WriteLine($"{measurements.Max(x=> x.Temperature):F4}"));
+
+            Task.WaitAll(averageTask, minTask, maxTask);
 
             Console.WriteLine($"{stopwatch.Elapsed.TotalSeconds:F2} s");
             Console.ReadKey();
@@ -30,17 +34,11 @@ namespace OneBrc
             {
                 var posisions = GetPosisions(mmf, total, chunkSize);
 
-                Console.WriteLine($"{posisions.Count()} Chunks");
-                Console.WriteLine();
-
                 ParallelOptions parallelOptions = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-                //for (int i = 0; i < posisions.Length; i++)
                 Parallel.For(0, posisions.Length, parallelOptions, i =>
                 {
-                    var stopwatch = new Stopwatch(); stopwatch.Start();
                     var measurements = ReadMeasurements(mmf, posisions[i]);
-                    Console.WriteLine($"{DateTime.Now:t} | {i} : {measurements.Count()} -> {stopwatch.Elapsed.TotalSeconds:F2} s");
                     allMeasurements.Add(measurements.ToList());
                 });
             }
@@ -103,8 +101,11 @@ namespace OneBrc
 
     public record Position(long Start, long Length);
 
-    public struct Measurement(byte[] City, float Temperature)
+    public struct Measurement(byte[] city, float temperature)
     {
-        //public readonly string GetCity() => Encoding.UTF8.GetString(City);
+        public byte[] City = city;
+        public float Temperature = temperature;
+
+        //public readonly string GetCity() => Encoding.UTF8.GetString(city);
     }
 }
