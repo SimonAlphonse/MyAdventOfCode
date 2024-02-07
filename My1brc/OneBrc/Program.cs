@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace OneBrc
 {
@@ -8,29 +9,31 @@ namespace OneBrc
     {
         static void Main(string[] args)
         {
+            Console.WriteLine($"{DateTime.Now:T}");
             var stopwatch = new Stopwatch(); stopwatch.Start();
 
             var fileName = @"C:\Users\Windows\source\repos\1brc\measurements.txt";
 
-            var measurements = ReadMeasurements(fileName, 200 * 1024 * 1024);
+            var measurements = ReadMeasurements(fileName, 100 * 1024 * 1024);
 
-            var averageTask = Task.Run(() => Console.WriteLine($"{measurements.Average(x=> x.Temperature):F4}"));
-            var minTask = Task.Run(() => Console.WriteLine($"{measurements.Min(x=> x.Temperature):F4}"));
-            var maxTask = Task.Run(() => Console.WriteLine($"{measurements.Max(x=> x.Temperature):F4}"));
+            //Console.WriteLine($"{stopwatch.Elapsed.TotalSeconds:F2} s");
 
-            Task.WaitAll(averageTask, minTask, maxTask);
+            //var averageTask = Task.Run(() => Console.WriteLine($"{measurements.Average(x => x.Temperature):F4}"));
+            //var minTask = Task.Run(() => Console.WriteLine($"{measurements.Min(x => x.Temperature):F4}"));
+            //var maxTask = Task.Run(() => Console.WriteLine($"{measurements.Max(x => x.Temperature):F4}"));
+            //Task.WaitAll(averageTask, minTask, maxTask);
 
-            Console.WriteLine($"{stopwatch.Elapsed.TotalSeconds:F2} s");
+            Console.WriteLine($"{DateTime.Now:T} | Time Taken : {stopwatch.Elapsed.TotalSeconds:F2} s");
             Console.ReadKey();
         }
 
-        public static List<Measurement> ReadMeasurements(string fileName, long chunkSize)
+        public static Measurement[] ReadMeasurements(string fileName, long chunkSize)
         {
-            var allMeasurements = new ConcurrentBag<List<Measurement>>();
+            var allMeasurements = new ConcurrentBag<Measurement[]>();
 
             long total = new FileInfo(fileName).Length;
 
-            using var mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.Open);
+            using var mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.Open, "1Brc");
             {
                 var posisions = GetPosisions(mmf, total, chunkSize);
 
@@ -39,11 +42,11 @@ namespace OneBrc
                 Parallel.For(0, posisions.Length, parallelOptions, i =>
                 {
                     var measurements = ReadMeasurements(mmf, posisions[i]);
-                    allMeasurements.Add(measurements.ToList());
+                    allMeasurements.Add(measurements.ToArray());
                 });
             }
 
-            return allMeasurements.SelectMany(s => s).ToList();
+            return allMeasurements.SelectMany(s => s).ToArray();
         }
 
         private static Position[] GetPosisions(MemoryMappedFile mmf, long total, long chunk)
@@ -68,9 +71,11 @@ namespace OneBrc
             return positions.ToArray();
         }
 
-        private static IEnumerable<Measurement> ReadMeasurements(MemoryMappedFile mmf, Position position)
+        private static List<Measurement> ReadMeasurements(MemoryMappedFile mmf, Position position)
         {
             using MemoryMappedViewAccessor accessor = mmf.CreateViewAccessor(position.Start, position.Length);
+
+            List<Measurement> measurements = [];
 
             int i = 0; int length = 0;
             var bytes = new byte[1];
@@ -89,13 +94,15 @@ namespace OneBrc
                 {
                     byteTemperature = new byte[length];
                     accessor.ReadArray(i - length, byteTemperature, 0, length);
-                    yield return new(byteCity, float.Parse(byteTemperature));
+                    measurements.Add(new(byteCity, float.Parse(byteTemperature)));
                     length = 0;
                 }
                 else { length++; }
 
                 i++;
             }
+
+            return measurements;
         }
     }
 
